@@ -1,0 +1,23 @@
+# using official CentOS 7.4.1708 image
+image: centos:7.4.1708
+
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+
+before_script:
+  - yum -y install epel-release
+  - yum -y update
+  - yum -y install cmake3 gcc gcc-c++ make wget unzip
+  - yum -y install freeglut freeglut-devel libXi-devel libXrandr-devel libXinerama-devel libXcursor-devel
+  - yum -y clean all
+  - ln -s /usr/bin/cmake3 /usr/bin/cmake
+
+build:
+  stage: build
+  script:
+    - chmod +x build.sh
+    - ./build.sh
+  artifacts:
+    paths:
+      - build/denoiser.so
+    expires_in: 4 weeks
