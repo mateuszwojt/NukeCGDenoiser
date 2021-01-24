@@ -22,7 +22,7 @@ static const char* const denoiseTypeNames[] = {
 	0
 };
 
-DenoiserIop::DenoiserIop(Node* node) : Iop(node)
+DenoiserIop::DenoiserIop(Node* node) : PlanarIop(node)
 {
 // initialize all members
     m_bHDR = true;
@@ -307,7 +307,7 @@ void DenoiserIop::_request(int x, int y, int r, int t, ChannelMask channels, int
 void DenoiserIop::_open()
 {
 	// initialize beauty AOV and output vector, check resolution
-	if (!dynamic_cast<DD::Image::Black*>(input(INPUT_BEAUTY)))
+	if (!dynamic_cast<Black*>(input(INPUT_BEAUTY)))
 	{
 		Iop* op = dynamic_cast<Iop*>(Op::input(INPUT_BEAUTY));
 		m_beautyWidth = op->input_format().width();
@@ -316,7 +316,7 @@ void DenoiserIop::_open()
 		m_outputPixels.resize(m_beautyWidth * m_beautyHeight * 3);
     }
 
-	if (!dynamic_cast<DD::Image::Black*>(input(INPUT_NORMAL)))
+	if (!dynamic_cast<Black*>(input(INPUT_NORMAL)))
 	{
 		Iop* op = dynamic_cast<Iop*>(Op::input(INPUT_NORMAL));
 		m_normalWidth = op->input_format().width();
@@ -328,7 +328,7 @@ void DenoiserIop::_open()
 		m_normalPixels.resize(m_normalWidth * m_normalHeight * 3);
 	}
 
-	if (!dynamic_cast<DD::Image::Black*>(input(INPUT_ALBEDO)))
+	if (!dynamic_cast<Black*>(input(INPUT_ALBEDO)))
 	{
 		Iop* op = dynamic_cast<Iop*>(Op::input(INPUT_ALBEDO));
 		m_albedoWidth = op->input_format().width();
@@ -349,81 +349,48 @@ void DenoiserIop::_open()
 	{
 		return;
 	}
+}
 
-	int width, height;
-	width = curInput->input_format().width();
-	height = curInput->input_format().height();
+void DenoiserIop::fetchPlane(ImagePlane& outputPlane)
+{
+    if (aborted())
+        return;
 
-	// Channels from input and RGBA channel mask to intersect with
-	ChannelSet chmask, inputChannels;
-	chmask += Mask_RGB;
-	inputChannels = curInput->channels();
+    input0().fetchPlane(outputPlane);
+    outputPlane.makeUnique()
 
-	// For reading we want to access the input format, not bounding box.
-	Format format = curInput->input_format();
-	const int fx = format.x();
-	const int fy = format.y();
-	const int fr = format.r();
-	const int ft = format.t();
+    // Get imageplane size, different bboxes etc can mess this up, so needs more elaborate handling in practice
+    int width = outputPlane.bounds().w();
+    int height = outputPlane.bounds().h();
 
-	// Lock an area into the cache using an interest and release immediately
-	Interest interest(*curInput, fx, fy, fr, ft, chmask, true);
-	interest.unlock();
+    float* destBuffer = nullptr;
 
-	std::vector<float> red_channel(width * height);
-	std::vector<float> green_channel(width * height);
-	std::vector<float> blue_channel(width * height);
+    for (int channel = 0; channel < 3; ++channel) {
+        destBuffer = &(outputPlane.writableAt(0, 0, channel));
 
-    // Copy each channel row values into temp buffers
-	foreach(channel, chmask)
-	{
-		if (inputChannels.contains(channel))
-		{
-			int currentRow = 0;
-
-			for (int ry = fy; ry < ft; ry++)
-			{
-				Row row(fx, fr);
-				row.get(*curInput, ry, fx, fr, chmask);
-
-				const float *CUR = row[channel] + fx;
-
-				switch (channel)
-				{
-				case Chan_Red:
-					memcpy(&red_channel[ry * width], CUR, sizeof(float) * width);
-				case Chan_Green:
-					memcpy(&green_channel[ry * width], CUR, sizeof(float) * width);
-				case Chan_Blue:
-					memcpy(&blue_channel[ry * width], CUR, sizeof(float) * width);
-				}
-				currentRow++;
-			}
-		}
-	}
-
-	// contiguous packing of pixels
-	for (int i = 0; i < width; i++)
-	{
-		for (int j = 0; j < height; j++)
-		{
-			m_beautyPixels[(j * width + i) * 3 + 0] = red_channel[j * width + i];
-			m_beautyPixels[(j * width + i) * 3 + 1] = green_channel[j * width + i];
-			m_beautyPixels[(j * width + i) * 3 + 2] = blue_channel[j * width + i];
-		}
-	}
+        // Copy data from imageplane to other buffer
+        memcpy(&m_beautyPixels[width * height * channel],  destBuffer, sizeof(float) * width * height);
+    }
 
 	if (m_denoiseType == 1)
 	{
+		// OptiX
 		setupOptix();
 		executeOptix();
 		copyOptixFramebuffer();
 	}
 	else
 	{
+		// OIDN
 		setupIntel();
 		executeIntel();
 	}
+
+    // Copy data back
+    for (int channel = 0; channel < 3; ++channel) {
+        destBuffer = &(outputPlane.writableAt(0, 0, channel));
+        memcpy(destBuffer, &m_beautyPixels[width * height * channel], sizeof(float) * width * height);
+    }
 }
 
 void DenoiserIop::engine(int y, int x, int r, ChannelMask channels, Row& out)

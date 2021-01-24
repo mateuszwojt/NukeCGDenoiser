@@ -1,15 +1,15 @@
 #ifndef DENOISER_H
 #define DENOISER_H
 
-#include "DDImage/Iop.h"
+#include "DDImage/PlanarIop.h"
 #include "DDImage/Interest.h"
 #include "DDImage/Row.h"
 #include "DDImage/Knobs.h"
 #include "DDImage/Knob.h"
 #include "DDImage/DDMath.h"
 
-// #include <OpenImageDenoise/oidn.hpp>
-// #include <optix_world.h>
+#include <OpenImageDenoise/oidn.hpp>
+#include <optix_world.h>
 
 #define MAX_INPUTS 3
 
@@ -18,7 +18,7 @@ static const char* const CLASS = "Denoiser";
 
 using namespace DD::Image;
 
-class DenoiserIop : public Iop
+class DenoiserIop : public PlanarIop
 {
 public:
 // constructor
@@ -28,12 +28,15 @@ public:
 	int minimum_inputs() const { return MAX_INPUTS; }
 	int maximum_inputs() const { return 1; }
 
+	PackedPreference packedPreference() const { return ePackedPreferencePacked; }
+
 	void knobs(Knob_Callback f);
 
 	void _validate(bool);
 	void _request(int x, int y, int r, int t, ChannelMask channels, int count);
 	void _open();
 
+	void fetchPlane(ImagePlane& outputPlane);
 	void engine(int y, int x, int r, ChannelMask channels, Row& out);
 
 	const char* input_label(int n, char*) const;
