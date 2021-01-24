@@ -20,4 +20,4 @@ build:
   artifacts:
     paths:
       - build/denoiser.so
-    expires_in: 4 weeks
+    expires_in: 1 week
