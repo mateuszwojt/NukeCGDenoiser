@@ -9,6 +9,7 @@ before_script:
   - yum -y update
   - yum -y install cmake3 gcc gcc-c++ make wget unzip
   - yum -y install freeglut freeglut-devel libXi-devel libXrandr-devel libXinerama-devel libXcursor-devel
+  - yum -y install tbb-devel
   - yum -y clean all
   - ln -s /usr/bin/cmake3 /usr/bin/cmake
 
@@ -19,5 +20,4 @@ build:
     - ./build.sh
   artifacts:
     paths:
-      - build/denoiser.so
-    expires_in: 1 week
+      - build/
