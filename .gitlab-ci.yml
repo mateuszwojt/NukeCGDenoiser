@@ -11,7 +11,6 @@ before_script:
   - yum -y install freeglut freeglut-devel libXi-devel libXrandr-devel libXinerama-devel libXcursor-devel
   - yum -y install tbb-devel
   - yum -y clean all
-  - ln -s /usr/bin/cmake3 /usr/bin/cmake
 
 build:
   stage: build
