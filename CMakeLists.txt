@@ -39,10 +39,11 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 find_package(Nuke REQUIRED)
 
 # OpenImageDenoise
-find_package(OpenImageDenoise REQUIRED)
-if(NOT OPENIMAGEDENOISE_FOUND)
-  message(STATUS "OpenImageDenoise not found")
-endif()
+# find_package(OpenImageDenoise REQUIRED)
+# if(NOT OPENIMAGEDENOISE_FOUND)
+  message(STATUS "Compiling OIDN from source...")
+  add_subdirectory(thirdparty/oidn)
+# endif()
 
 # OptiX
 find_package(Optix REQUIRED)
