@@ -1,5 +1,5 @@
-# using official CentOS 7.4.1708 image
-image: centos:7.4.1708
+# using official CentOS 8 image
+image: centos:8
 
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
