@@ -1,3 +1,0 @@
-[submodule "thirdparty/oidn"]
-	path = thirdparty/oidn
-	url = https://github.com/OpenImageDenoise/oidn
