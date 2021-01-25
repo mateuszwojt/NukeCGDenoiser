@@ -15,10 +15,20 @@ In order to compile this plugin, you're gonna need:
 
 This plugin should compile on Linux and Windows, since both Intel and NVIDIA backends are supported on these platforms.
 
+## Building
+
+_**Important**_: If OIDN library is not found, `oidn` submodule will be used to compile this dependency. Note that it requires `git-lfs`, building it without LFS installed will likely fail.
+
+- TODO...
+
+
+
 ## Performance tests
 
 - TODO...
 
 ## References
 
-- TODO...
+I'd like to say "big thanks" to:
+- Marta Nowak, for help in figuring out the contiguos pixel packing
+- Hendrik Proosa, for looking through the code and suggesting some great improvements in image buffer access
