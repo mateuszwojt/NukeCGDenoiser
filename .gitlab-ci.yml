@@ -9,7 +9,7 @@ before_script:
   - yum -y update
   - yum -y install cmake3 gcc gcc-c++ make wget unzip
   - yum -y install freeglut freeglut-devel libXi-devel libXrandr-devel libXinerama-devel libXcursor-devel
-  - yum -y install tbb-devel
+  - yum -y install tbb-devel python-devel
   - yum -y clean all
 
 build:
