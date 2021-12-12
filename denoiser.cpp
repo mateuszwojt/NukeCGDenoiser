@@ -13,7 +13,6 @@ DenoiserIop::DenoiserIop(Node *node) : PlanarIop(node)
 	// initialize all members
 	m_bHDR = true;
 	m_bAffinity = false;
-	m_blend = 0.f;
 	m_numRuns = 1;
 	m_numThreads = 0;
 	m_maxMem = 0.f;
@@ -106,7 +105,6 @@ void DenoiserIop::knobs(Knob_Callback f)
 	Bool_knob(f, &m_bHDR, "hdr");
 	SetFlags(f, Knob::STARTLINE);
 	Bool_knob(f, &m_bAffinity, "affinity");
-	Float_knob(f, &m_blend, "blend");
 	Float_knob(f, &m_maxMem, "maxmem");
 	Int_knob(f, &m_numRuns, "num_runs");
 }
@@ -122,43 +120,55 @@ const char *DenoiserIop::input_label(int n, char *) const
 void DenoiserIop::_validate(bool for_real)
 {
 	copy_info();
-	merge_info();
 }
 
-void DenoiserIop::renderStripe(ImagePlane& plane)
+void DenoiserIop::renderStripe(ImagePlane &plane)
 {
 	if (aborted() || cancelled())
 		return;
 
-	// pull image from input0()
-	input0().fetchPlane(plane);
+	DD::Image::Box input_box = plane.bounds();
+	input_box.intersect(input0().info());
 
+	// Create image plane from input.
+	DD::Image::ImagePlane input_plane(
+		input_box,
+		plane.packed(),
+		plane.channels(),
+		plane.nComps());
+
+	input0().fetchPlane(input_plane);
+	plane.makeWritable();
+
+	const ChannelSet channels = input_plane.channels();
+	const size_t numComponents = 4;
+	const size_t numPixels = input_plane.bounds().area();
 	m_beautyWidth = plane.bounds().w();
 	m_beautyHeight = plane.bounds().h();
+	m_beautyPixels.resize(numPixels * numComponents);
+	m_outputPixels.resize(numPixels * numComponents);
+
+	float *destBuffer = nullptr;
+
+	foreach (z, channels)
+	{
+		destBuffer = &(input_plane.writableAt(0, 0, plane.chanNo(z)));
+		memcpy(&m_beautyPixels[numPixels * plane.chanNo(z)], destBuffer, sizeof(float) * plane.rowStride());
+	}
 
 	{
+		if (aborted() || cancelled())
+			return;
 		// OIDN
 		setupOIDN();
 		executeOIDN();
 	}
 
-	if (aborted() || cancelled())
-		return;
-
-	plane.makeWritable();
-	const ChannelSet channels = plane.channels();
-    const size_t numComponents = 4;
-    const size_t numPixels = plane.bounds().area();
-    float* dest = plane.writable();
-
-	foreach(z, channels) {
-        const uint8_t chanOffset = colourIndex(z);
-        Linear::from_float(
-            dest + numPixels * chanOffset,
-            m_outputPixels.data() + chanOffset,
-            numPixels,
-            numComponents);
-    }
+	foreach (z, channels)
+	{
+		destBuffer = &(plane.writableAt(0, 0, plane.chanNo(z)));
+		memcpy(destBuffer, &m_beautyPixels[numPixels * plane.chanNo(z)], sizeof(float) * plane.rowStride());
+	}
 }
 
 static Iop *build(Node *node) { return new DenoiserIop(node); }

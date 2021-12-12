@@ -24,13 +24,13 @@ public:
 	int minimum_inputs() const { return MAX_INPUTS; }
 	int maximum_inputs() const { return 1; }
 
-	// PackedPreference packedPreference() const { return ePackedPreferencePacked; }
+	PackedPreference packedPreference() const { return ePackedPreferencePacked; }
 
 	void knobs(Knob_Callback f);
 
 	void _validate(bool);
 
-	// void fetchPlane(ImagePlane &outputPlane);
+	void getRequests(const Box& box, const ChannelSet& channels, int count, RequestOutput &reqData) const override { }
 	virtual void renderStripe(ImagePlane& plane);
 
 	const char *input_label(int n, char *) const;
@@ -48,7 +48,6 @@ private:
 	bool m_bHDR;
 	bool m_bAffinity;
 
-	float m_blend;
 	float m_maxMem;
 
 	int m_numThreads;
