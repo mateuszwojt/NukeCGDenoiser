@@ -1,11 +1,11 @@
-#pragma warning(disable: 4996)
+#pragma warning(disable : 4996)
 
 #include "denoiser.h"
 
 #include <iostream>
 #include <iomanip>
 
-#include "DDImage/Black.h"
+#include <DDImage/Black.h>
 
 #define INPUT_BEAUTY 0
 #define INPUT_ALBEDO 1
@@ -16,34 +16,33 @@
 // TODO: actually use albedo/normal to open call (right now it does nothing)
 // TODO: optimize _request loop so it fetches image only once
 
-static const char* const denoiseTypeNames[] = {
+static const char *const denoiseTypeNames[] = {
 	"Intel",
 	"Optix",
-	0
-};
+	0};
 
-DenoiserIop::DenoiserIop(Node* node) : PlanarIop(node)
+DenoiserIop::DenoiserIop(Node *node) : PlanarIop(node)
 {
-// initialize all members
-    m_bHDR = true;
-    m_bAffinity = false;
-    m_blend = 0.f;
-    m_denoiseType = 0;
-    m_numRuns = 1;
-    m_numThreads = 0;
-    m_maxMem = 0.f;
-    m_beautyWidth = m_beautyHeight = m_albedoWidth = m_albedoHeight = m_normalWidth = m_normalHeight = 0;
+	// initialize all members
+	m_bHDR = true;
+	m_bAffinity = false;
+	m_blend = 0.f;
+	m_denoiseType = 0;
+	m_numRuns = 1;
+	m_numThreads = 0;
+	m_maxMem = 0.f;
+	m_beautyWidth = m_beautyHeight = m_albedoWidth = m_albedoHeight = m_normalWidth = m_normalHeight = 0;
 
-    m_optixContext = nullptr;
-    m_beautyBuffer = nullptr;
-    m_albedoBuffer = nullptr;
-    m_normalBuffer = nullptr;
-    m_outBuffer = nullptr;
-    m_denoiserStage = nullptr;
-    m_commandList = nullptr;
+	m_optixContext = nullptr;
+	m_beautyBuffer = nullptr;
+	m_albedoBuffer = nullptr;
+	m_normalBuffer = nullptr;
+	m_outBuffer = nullptr;
+	m_denoiserStage = nullptr;
+	m_commandList = nullptr;
 
-    m_device = nullptr;
-    m_filter = nullptr;
+	m_device = nullptr;
+	m_filter = nullptr;
 };
 
 void DenoiserIop::setupOptix()
@@ -62,7 +61,7 @@ void DenoiserIop::setupOptix()
 		m_normalBuffer = m_optixContext->createBuffer(RT_BUFFER_INPUT_OUTPUT, RT_FORMAT_FLOAT4, m_normalWidth, m_normalHeight);
 		m_outBuffer = m_optixContext->createBuffer(RT_BUFFER_INPUT_OUTPUT, RT_FORMAT_FLOAT4, m_beautyWidth, m_beautyHeight);
 
-		m_pDevicePtr = (float*)m_beautyBuffer->map();
+		m_pDevicePtr = (float *)m_beautyBuffer->map();
 		unsigned int m_pixelIdx = 0;
 		for (unsigned int y = 0; y < m_beautyHeight; y++)
 			for (unsigned int x = 0; x < m_beautyWidth; x++)
@@ -150,7 +149,7 @@ void DenoiserIop::copyOptixFramebuffer()
 	try
 	{
 		// Copy denoised image back to the cpu
-		m_pDevicePtr = (float*)m_outBuffer->map();
+		m_pDevicePtr = (float *)m_outBuffer->map();
 		m_pixelIdx = 0;
 		for (unsigned int y = 0; y < m_beautyHeight; y++)
 			for (unsigned int x = 0; x < m_beautyWidth; x++)
@@ -184,7 +183,7 @@ void DenoiserIop::setupIntel()
 	{
 		// create device
 		device = oidn::newDevice();
-		const char* errorMessage;
+		const char *errorMessage;
 		if (device.getError(errorMessage) != oidn::Error::None)
 			throw std::runtime_error(errorMessage);
 
@@ -199,8 +198,8 @@ void DenoiserIop::setupIntel()
 		filter = device.newFilter("RT");
 
 		// set the images
-		filter.setImage("color", (void*)&m_beautyPixels[0], oidn::Format::Float3, m_beautyWidth, m_beautyHeight);
-		filter.setImage("output", (void*)&m_outputPixels[0], oidn::Format::Float3, m_beautyWidth, m_beautyHeight);
+		filter.setImage("color", (void *)&m_beautyPixels[0], oidn::Format::Float3, m_beautyWidth, m_beautyHeight);
+		filter.setImage("output", (void *)&m_outputPixels[0], oidn::Format::Float3, m_beautyWidth, m_beautyHeight);
 
 		// set filter parameters
 		filter.set("hdr", hdr);
@@ -208,9 +207,8 @@ void DenoiserIop::setupIntel()
 
 		// commit changes to the filter
 		filter.commit();
-
 	}
-	catch (const std::exception& e)
+	catch (const std::exception &e)
 	{
 		std::string message = e.what();
 		error("[OIDN]: %s", message.c_str());
@@ -255,7 +253,7 @@ void DenoiserIop::executeIntel()
 			}
 		}
 	}
-	catch (const std::runtime_error& e)
+	catch (const std::runtime_error &e)
 	{
 		std::string message = e.what();
 		error("[OIDN]: %s", message.c_str());
@@ -267,23 +265,26 @@ void DenoiserIop::knobs(Knob_Callback f)
 	// TODO: split into sections for Intel/Optix-specific parameters
 	Enumeration_knob(f, &m_denoiseType, denoiseTypeNames, "denoiseType");
 	Tooltip(f,
-		"Intel: Open Image Denoiser by Intel (CPU)\n"
-		"OptiX: NVidia's denoiser (GPU)"
-	);
-	Bool_knob(f, &m_bHDR, "hdr"); SetFlags(f, Knob::STARTLINE);
+			"Intel: Open Image Denoiser by Intel (CPU)\n"
+			"OptiX: NVidia's denoiser (GPU)");
+	Bool_knob(f, &m_bHDR, "hdr");
+	SetFlags(f, Knob::STARTLINE);
 	Bool_knob(f, &m_bAffinity, "affinity");
 	Float_knob(f, &m_blend, "blend");
 	Float_knob(f, &m_maxMem, "maxmem");
 	Int_knob(f, &m_numRuns, "num_runs");
 }
 
-const char* DenoiserIop::input_label(int n, char*) const
+const char *DenoiserIop::input_label(int n, char *) const
 {
 	switch (n)
 	{
-	case INPUT_BEAUTY: return "beauty";
-	case INPUT_ALBEDO: return "albedo";
-	case INPUT_NORMAL: return "normal";
+	case INPUT_BEAUTY:
+		return "beauty";
+	case INPUT_ALBEDO:
+		return "albedo";
+	case INPUT_NORMAL:
+		return "normal";
 	}
 
 	return 0;
@@ -307,18 +308,18 @@ void DenoiserIop::_request(int x, int y, int r, int t, ChannelMask channels, int
 void DenoiserIop::_open()
 {
 	// initialize beauty AOV and output vector, check resolution
-	if (!dynamic_cast<Black*>(input(INPUT_BEAUTY)))
+	if (!dynamic_cast<Black *>(input(INPUT_BEAUTY)))
 	{
-		Iop* op = dynamic_cast<Iop*>(Op::input(INPUT_BEAUTY));
+		Iop *op = dynamic_cast<Iop *>(Op::input(INPUT_BEAUTY));
 		m_beautyWidth = op->input_format().width();
 		m_beautyHeight = op->input_format().height();
 		m_beautyPixels.resize(m_beautyWidth * m_beautyHeight * 3);
 		m_outputPixels.resize(m_beautyWidth * m_beautyHeight * 3);
-    }
+	}
 
-	if (!dynamic_cast<Black*>(input(INPUT_NORMAL)))
+	if (!dynamic_cast<Black *>(input(INPUT_NORMAL)))
 	{
-		Iop* op = dynamic_cast<Iop*>(Op::input(INPUT_NORMAL));
+		Iop *op = dynamic_cast<Iop *>(Op::input(INPUT_NORMAL));
 		m_normalWidth = op->input_format().width();
 		m_normalHeight = op->input_format().height();
 		if (m_normalWidth != m_beautyWidth || m_normalHeight != m_beautyHeight)
@@ -328,9 +329,9 @@ void DenoiserIop::_open()
 		m_normalPixels.resize(m_normalWidth * m_normalHeight * 3);
 	}
 
-	if (!dynamic_cast<Black*>(input(INPUT_ALBEDO)))
+	if (!dynamic_cast<Black *>(input(INPUT_ALBEDO)))
 	{
-		Iop* op = dynamic_cast<Iop*>(Op::input(INPUT_ALBEDO));
+		Iop *op = dynamic_cast<Iop *>(Op::input(INPUT_ALBEDO));
 		m_albedoWidth = op->input_format().width();
 		m_albedoHeight = op->input_format().height();
 		if (m_albedoWidth != m_beautyWidth || m_albedoHeight != m_beautyHeight)
@@ -343,34 +344,35 @@ void DenoiserIop::_open()
 	// TODO: iterate over all inputs (normal, albedo)
 	//	for (int i = 0; i < MAX_INPUTS; ++i)
 	//	{
-	Iop* curInput = input(0);
+	Iop *curInput = input(0);
 
-	if (dynamic_cast<Black*>(input(0)))
+	if (dynamic_cast<Black *>(input(0)))
 	{
 		return;
 	}
 }
 
-void DenoiserIop::fetchPlane(ImagePlane& outputPlane)
+void DenoiserIop::fetchPlane(ImagePlane &outputPlane)
 {
-    if (aborted())
-        return;
+	if (aborted())
+		return;
 
-    input0().fetchPlane(outputPlane);
-    outputPlane.makeUnique()
+	input0().fetchPlane(outputPlane);
+	outputPlane.makeUnique()
 
-    // Get imageplane size, different bboxes etc can mess this up, so needs more elaborate handling in practice
-    int width = outputPlane.bounds().w();
-    int height = outputPlane.bounds().h();
+		// Get imageplane size, different bboxes etc can mess this up, so needs more elaborate handling in practice
+		int width = outputPlane.bounds().w();
+	int height = outputPlane.bounds().h();
 
-    float* destBuffer = nullptr;
+	float *destBuffer = nullptr;
 
-    for (int channel = 0; channel < 3; ++channel) {
-        destBuffer = &(outputPlane.writableAt(0, 0, channel));
+	for (int channel = 0; channel < 3; ++channel)
+	{
+		destBuffer = &(outputPlane.writableAt(0, 0, channel));
 
-        // Copy data from imageplane to other buffer
-        memcpy(&m_beautyPixels[width * height * channel],  destBuffer, sizeof(float) * width * height);
-    }
+		// Copy data from imageplane to other buffer
+		memcpy(&m_beautyPixels[width * height * channel], destBuffer, sizeof(float) * width * height);
+	}
 
 	if (m_denoiseType == 1)
 	{
@@ -386,22 +388,26 @@ void DenoiserIop::fetchPlane(ImagePlane& outputPlane)
 		executeIntel();
 	}
 
-    // Copy data back
-    for (int channel = 0; channel < 3; ++channel) {
-        destBuffer = &(outputPlane.writableAt(0, 0, channel));
-        memcpy(destBuffer, &m_beautyPixels[width * height * channel], sizeof(float) * width * height);
-    }
+	// Copy data back
+	for (int channel = 0; channel < 3; ++channel)
+	{
+		destBuffer = &(outputPlane.writableAt(0, 0, channel));
+		memcpy(destBuffer, &m_beautyPixels[width * height * channel], sizeof(float) * width * height);
+	}
 }
 
-void DenoiserIop::engine(int y, int x, int r, ChannelMask channels, Row& out)
+void DenoiserIop::engine(int y, int x, int r, ChannelMask channels, Row &out)
 {
 	int size = m_outputPixels.size();
-	float* pData = m_outputPixels.data();
+	float *pData = m_outputPixels.data();
 
-	foreach(z, channels)
+	foreach (z, channels)
 	{
-		if (aborted()) { return; }
-		float* outptr = out.writable(z) + x;
+		if (aborted())
+		{
+			return;
+		}
+		float *outptr = out.writable(z) + x;
 
 		for (int cur = x; cur < r; cur++)
 		{
@@ -418,5 +424,5 @@ void DenoiserIop::engine(int y, int x, int r, ChannelMask channels, Row& out)
 	}
 }
 
-static Iop* build(Node* node) { return new DenoiserIop(node); }
+static Iop *build(Node *node) { return new DenoiserIop(node); }
 const Iop::Description DenoiserIop::d("Denoiser", "Filter/Denoiser", build);
