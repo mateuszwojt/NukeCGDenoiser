@@ -39,25 +39,15 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 find_package(Nuke REQUIRED)
 
 # OpenImageDenoise
-find_package(OpenImageDenoise)
-if(NOT OPENIMAGEDENOISE_FOUND)
-  message(STATUS "ODIN not found, it will be compiled from source")
-  add_subdirectory(thirdparty/oidn)
-endif()
+find_package(OpenImageDenoise REQUIRED)
 
 # OptiX
-find_package(Optix)
-
-if(APPLE)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.1")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math")
-endif()
+find_package(Optix REQUIRED)
 
 # build plugin
 add_library(denoiser SHARED denoiser.cpp)
 set_target_properties(denoiser PROPERTIES PREFIX "")
-target_link_libraries(denoiser PUBLIC ${Nuke_LIBRARIES} OpenImageDenoise)
+target_link_libraries(denoiser PUBLIC ${Nuke_LIBRARIES} OpenImageDenoise optix)
 
 if(MSVC)
   add_definitions(-DWIN32)
