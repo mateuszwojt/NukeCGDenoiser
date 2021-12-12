@@ -6,11 +6,10 @@
 #include <DDImage/DDMath.h>
 
 #include <OpenImageDenoise/oidn.hpp>
-#include <optix_world.h>
 
 #define MAX_INPUTS 3
 
-static const char *const HELP = "CPU/GPU CG render denoiser based on Intel OpenImageDenoise and NVidia Optix libraries.";
+static const char *const HELP = "CG render denoiser based on Intel OpenImageDenoise library";
 static const char *const CLASS = "Denoiser";
 
 using namespace DD::Image;
@@ -34,7 +33,7 @@ public:
 	void _open();
 
 	void fetchPlane(ImagePlane &outputPlane);
-	void engine(int y, int x, int r, ChannelMask channels, Row &out);
+	virtual void renderStripe(ImagePlane& plane);
 
 	const char *input_label(int n, char *) const;
 	static const Iop::Description d;
@@ -42,14 +41,9 @@ public:
 	const char *Class() const { return d.name; }
 	const char *node_help() const { return HELP; }
 
-	// OptiX methods
-	void setupOptix();
-	void executeOptix();
-	void copyOptixFramebuffer();
-
 	// Intel methods
-	void setupIntel();
-	void executeIntel();
+	void setupOIDN();
+	void executeOIDN();
 
 	// private class members
 private:
@@ -59,24 +53,11 @@ private:
 	float m_blend;
 	float m_maxMem;
 
-	int m_denoiseType;
 	int m_numThreads;
 	int m_numRuns;
 	unsigned int m_beautyHeight, m_beautyWidth, m_albedoHeight, m_albedoWidth, m_normalHeight, m_normalWidth;
 
-	float *m_pDevicePtr;
-	unsigned int m_pixelIdx;
-
-	// Optix class members
-	optix::Context m_optixContext;
-	optix::Buffer m_beautyBuffer;
-	optix::Buffer m_albedoBuffer;
-	optix::Buffer m_normalBuffer;
-	optix::Buffer m_outBuffer;
-	optix::PostprocessingStage m_denoiserStage;
-	optix::CommandList m_commandList;
-
-	// Intel class members
+	// OIDN class members
 	oidn::DeviceRef m_device;
 	oidn::FilterRef m_filter;
 

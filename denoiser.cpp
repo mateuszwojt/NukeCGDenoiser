@@ -1,5 +1,3 @@
-#pragma warning(disable : 4996)
-
 #include "denoiser.h"
 
 #include <iostream>
@@ -16,197 +14,51 @@
 // TODO: actually use albedo/normal to open call (right now it does nothing)
 // TODO: optimize _request loop so it fetches image only once
 
-static const char *const denoiseTypeNames[] = {
-	"Intel",
-	"Optix",
-	0};
-
 DenoiserIop::DenoiserIop(Node *node) : PlanarIop(node)
 {
 	// initialize all members
 	m_bHDR = true;
 	m_bAffinity = false;
 	m_blend = 0.f;
-	m_denoiseType = 0;
 	m_numRuns = 1;
 	m_numThreads = 0;
 	m_maxMem = 0.f;
 	m_beautyWidth = m_beautyHeight = m_albedoWidth = m_albedoHeight = m_normalWidth = m_normalHeight = 0;
 
-	m_optixContext = nullptr;
-	m_beautyBuffer = nullptr;
-	m_albedoBuffer = nullptr;
-	m_normalBuffer = nullptr;
-	m_outBuffer = nullptr;
-	m_denoiserStage = nullptr;
-	m_commandList = nullptr;
-
 	m_device = nullptr;
 	m_filter = nullptr;
 };
 
-void DenoiserIop::setupOptix()
+void DenoiserIop::setupOIDN()
 {
-	if (DEBUG)
-	{
-		std::cout << "Setting up Optix..." << std::endl;
-	}
-
-	try
-	{
-		// Create our optix context and image buffers
-		m_optixContext = optix::Context::create();
-		m_beautyBuffer = m_optixContext->createBuffer(RT_BUFFER_INPUT_OUTPUT, RT_FORMAT_FLOAT4, m_beautyWidth, m_beautyHeight);
-		m_albedoBuffer = m_optixContext->createBuffer(RT_BUFFER_INPUT_OUTPUT, RT_FORMAT_FLOAT4, m_albedoWidth, m_albedoHeight);
-		m_normalBuffer = m_optixContext->createBuffer(RT_BUFFER_INPUT_OUTPUT, RT_FORMAT_FLOAT4, m_normalWidth, m_normalHeight);
-		m_outBuffer = m_optixContext->createBuffer(RT_BUFFER_INPUT_OUTPUT, RT_FORMAT_FLOAT4, m_beautyWidth, m_beautyHeight);
-
-		m_pDevicePtr = (float *)m_beautyBuffer->map();
-		unsigned int m_pixelIdx = 0;
-		for (unsigned int y = 0; y < m_beautyHeight; y++)
-			for (unsigned int x = 0; x < m_beautyWidth; x++)
-			{
-				memcpy(m_pDevicePtr, &m_beautyPixels[m_pixelIdx], sizeof(float) * 3);
-				m_pDevicePtr += 4;
-				m_pixelIdx += 3;
-			}
-		m_beautyBuffer->unmap();
-		m_pDevicePtr = 0;
-
-		// Setup the optix denoiser post processing stage
-		m_denoiserStage = m_optixContext->createBuiltinPostProcessingStage("DLDenoiser");
-		m_denoiserStage->declareVariable("input_buffer")->set(m_beautyBuffer);
-		m_denoiserStage->declareVariable("output_buffer")->set(m_outBuffer);
-		m_denoiserStage->declareVariable("blend")->setFloat(m_blend);
-		m_denoiserStage->declareVariable("hdr")->setUint(m_bHDR);
-		m_denoiserStage->declareVariable("maxmem")->setUint(static_cast<int>(m_maxMem));
-		m_denoiserStage->declareVariable("input_albedo_buffer")->set(m_albedoBuffer);
-		m_denoiserStage->declareVariable("input_normal_buffer")->set(m_normalBuffer);
-
-		// Add the denoiser to the new optix command list
-		m_commandList = m_optixContext->createCommandList();
-		m_commandList->appendPostprocessingStage(m_denoiserStage, m_beautyWidth, m_beautyHeight);
-		m_commandList->finalize();
-
-		// Compile our context. I'm not sure if this is needed given there is no megakernal?
-		m_optixContext->validate();
-		m_optixContext->compile();
-	}
-	catch (const std::runtime_error &e)
-	{
-		std::string message = e.what();
-		error("[OptiX]: %s", message.c_str());
-	}
-}
-
-void DenoiserIop::executeOptix()
-{
-	if (DEBUG)
-	{
-		std::cout << "Executing OptiX denoise..." << std::endl;
-	}
-
-	try
-	{
-		// Execute denoise
-		int sum = 0;
-		for (unsigned int i = 0; i < m_numRuns; i++)
-		{
-			std::cout << "Denoising..." << std::endl;
-			clock_t start = clock(), diff;
-			commandList->execute();
-			diff = clock() - start;
-			int msec = diff * 1000 / CLOCKS_PER_SEC;
-			if (DEBUG)
-			{
-				if (m_numRuns > 1)
-					std::cout << "Denoising run " << i << " complete in " << msec / 1000 << "." << std::setfill('0') << std::setw(3) << msec % 1000 << " seconds" << std::endl;
-				else
-					std::cout << "Denoising complete in " << msec / 1000 << "." << std::setfill('0') << std::setw(3) << msec % 1000 << " seconds" << std::endl;
-			}
-			sum += msec;
-		}
-
-		if (m_numRuns > 1)
-		{
-			sum /= m_numRuns;
-			if (DEBUG)
-			{
-				std::cout << "Denoising avg of " << m_numRuns << " complete in " << sum / 1000 << "." << std::setfill('0') << std::setw(3) << sum % 1000 << " seconds" << std::endl;
-			}
-		}
-	}
-	catch (const std::exception &e)
-	{
-		std::string message = e.what();
-		error("[OptiX]: %s", message.c_str());
-	}
-}
-
-void DenoiserIop::copyOptixFramebuffer()
-{
-	std::cout << "Copying framebuffer..." << std::endl;
-	try
-	{
-		// Copy denoised image back to the cpu
-		m_pDevicePtr = (float *)m_outBuffer->map();
-		m_pixelIdx = 0;
-		for (unsigned int y = 0; y < m_beautyHeight; y++)
-			for (unsigned int x = 0; x < m_beautyWidth; x++)
-			{
-				memcpy(&m_outputPixels[m_pixelIdx], m_pDevicePtr, sizeof(float) * 3);
-				m_pDevicePtr += 4;
-				m_pixelIdx += 3;
-			}
-		m_outBuffer->unmap();
-		m_pDevicePtr = 0;
-
-		// Remove our gpu buffers
-		m_beautyBuffer->destroy();
-		m_normalBuffer->destroy();
-		m_albedoBuffer->destroy();
-		m_outBuffer->destroy();
-		m_optixContext->destroy();
-	}
-	catch (const std::exception &e)
-	{
-		std::string message = e.what();
-		error("[OptiX]: %s", message.c_str());
-	}
-}
-
-void DenoiserIop::setupIntel()
-{
-	std::cout << "Initializing Intel denoise..." << std::endl;
-
 	try
 	{
 		// create device
-		device = oidn::newDevice();
+		m_device = oidn::newDevice();
 		const char *errorMessage;
-		if (device.getError(errorMessage) != oidn::Error::None)
+		if (m_device.getError(errorMessage) != oidn::Error::None)
 			throw std::runtime_error(errorMessage);
 
 		// set device parameters
-		device.set("numThreads", num_threads);
-		device.set("setAffinity", affinity);
+		m_device.set("numThreads", m_numThreads);
+		m_device.set("setAffinity", m_bAffinity);
 
 		// commit changes to the device
-		device.commit();
+		m_device.commit();
 
 		// initialize filter
-		filter = device.newFilter("RT");
+		m_filter = m_device.newFilter("RT");
 
 		// set the images
-		filter.setImage("color", (void *)&m_beautyPixels[0], oidn::Format::Float3, m_beautyWidth, m_beautyHeight);
-		filter.setImage("output", (void *)&m_outputPixels[0], oidn::Format::Float3, m_beautyWidth, m_beautyHeight);
+		m_filter.setImage("color", (void *)&m_beautyPixels[0], oidn::Format::Float3, m_beautyWidth, m_beautyHeight);
+		m_filter.setImage("output", (void *)&m_outputPixels[0], oidn::Format::Float3, m_beautyWidth, m_beautyHeight);
 
 		// set filter parameters
-		filter.set("hdr", hdr);
-		filter.set("maxMemoryMB", maxmem);
+		m_filter.set("hdr", m_bHDR);
+		m_filter.set("maxMemoryMB", m_maxMem);
 
 		// commit changes to the filter
-		filter.commit();
+		m_filter.commit();
 	}
 	catch (const std::exception &e)
 	{
@@ -215,13 +67,8 @@ void DenoiserIop::setupIntel()
 	}
 }
 
-void DenoiserIop::executeIntel()
+void DenoiserIop::executeOIDN()
 {
-	if (DEBUG)
-	{
-		std::cout << "Executing Intel denoise..." << std::endl;
-	}
-
 	try
 	{
 		int sum = 0;
@@ -232,7 +79,7 @@ void DenoiserIop::executeIntel()
 				std::cout << "Denoising..." << std::endl;
 			}
 			clock_t start = clock(), diff;
-			filter.execute();
+			m_filter.execute();
 			diff = clock() - start;
 			int msec = diff * 1000 / CLOCKS_PER_SEC;
 			if (DEBUG)
@@ -262,11 +109,6 @@ void DenoiserIop::executeIntel()
 
 void DenoiserIop::knobs(Knob_Callback f)
 {
-	// TODO: split into sections for Intel/Optix-specific parameters
-	Enumeration_knob(f, &m_denoiseType, denoiseTypeNames, "denoiseType");
-	Tooltip(f,
-			"Intel: Open Image Denoiser by Intel (CPU)\n"
-			"OptiX: NVidia's denoiser (GPU)");
 	Bool_knob(f, &m_bHDR, "hdr");
 	SetFlags(f, Knob::STARTLINE);
 	Bool_knob(f, &m_bAffinity, "affinity");
@@ -358,10 +200,10 @@ void DenoiserIop::fetchPlane(ImagePlane &outputPlane)
 		return;
 
 	input0().fetchPlane(outputPlane);
-	outputPlane.makeUnique()
+	outputPlane.makeUnique();
 
-		// Get imageplane size, different bboxes etc can mess this up, so needs more elaborate handling in practice
-		int width = outputPlane.bounds().w();
+	// Get imageplane size, different bboxes etc can mess this up, so needs more elaborate handling in practice
+	int width = outputPlane.bounds().w();
 	int height = outputPlane.bounds().h();
 
 	float *destBuffer = nullptr;
@@ -374,18 +216,10 @@ void DenoiserIop::fetchPlane(ImagePlane &outputPlane)
 		memcpy(&m_beautyPixels[width * height * channel], destBuffer, sizeof(float) * width * height);
 	}
 
-	if (m_denoiseType == 1)
-	{
-		// OptiX
-		setupOptix();
-		executeOptix();
-		copyOptixFramebuffer();
-	}
-	else
 	{
 		// OIDN
-		setupIntel();
-		executeIntel();
+		setupOIDN();
+		executeOIDN();
 	}
 
 	// Copy data back
@@ -396,30 +230,15 @@ void DenoiserIop::fetchPlane(ImagePlane &outputPlane)
 	}
 }
 
-void DenoiserIop::engine(int y, int x, int r, ChannelMask channels, Row &out)
+void DenoiserIop::renderStripe(ImagePlane& plane)
 {
-	int size = m_outputPixels.size();
-	float *pData = m_outputPixels.data();
+	plane.makeWritable();
 
-	foreach (z, channels)
+	foreach(z, outPlane.channels()) 
 	{
-		if (aborted())
+		for (Box::iterator it = box.begin(); it != box.end(); it++) 
 		{
-			return;
-		}
-		float *outptr = out.writable(z) + x;
-
-		for (int cur = x; cur < r; cur++)
-		{
-			if (z == Chan_Red || z == Chan_Blue || z == Chan_Green)
-			{
-				int offset = (y * m_beautyWidth + cur) * 3 + (z - 1);
-				*outptr++ = pData[offset];
-			}
-			if (z == Chan_Alpha)
-			{
-				// TODO: copy original alpha back to the output
-			}
+			plane.writableAt(plane.chanNo(z), it.x, it.y) = 0.5;
 		}
 	}
 }
