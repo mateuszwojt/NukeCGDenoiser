@@ -29,8 +29,6 @@ public:
 	void knobs(Knob_Callback f);
 
 	void _validate(bool);
-	void _request(int x, int y, int r, int t, ChannelMask channels, int count);
-	void _open();
 
 	// void fetchPlane(ImagePlane &outputPlane);
 	virtual void renderStripe(ImagePlane& plane);

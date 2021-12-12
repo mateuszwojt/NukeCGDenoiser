@@ -125,34 +125,25 @@ void DenoiserIop::_validate(bool for_real)
 	merge_info();
 }
 
-void DenoiserIop::_request(int x, int y, int r, int t, ChannelMask channels, int count)
-{
-	input(0)->request(x, y, r, t, channels, count);
-}
-
-void DenoiserIop::_open()
-{
-	// initialize beauty AOV and output vector, check resolution
-	if (!dynamic_cast<Black *>(input(0)))
-	{
-		Iop *op = dynamic_cast<Iop *>(Op::input(0));
-		m_beautyWidth = op->input_format().width();
-		m_beautyHeight = op->input_format().height();
-		m_beautyPixels.resize(m_beautyWidth * m_beautyHeight * 3);
-		m_outputPixels.resize(m_beautyWidth * m_beautyHeight * 3);
-	}
-}
-
 void DenoiserIop::renderStripe(ImagePlane& plane)
 {
+	if (aborted() || cancelled())
+		return;
+
+	// pull image from input0()
+	input0().fetchPlane(plane);
+
+	m_beautyWidth = plane.bounds().w();
+	m_beautyHeight = plane.bounds().h();
+
 	{
 		// OIDN
 		setupOIDN();
 		executeOIDN();
 	}
 
-	if (aborted())
-	return;
+	if (aborted() || cancelled())
+		return;
 
 	plane.makeWritable();
 	const ChannelSet channels = plane.channels();
