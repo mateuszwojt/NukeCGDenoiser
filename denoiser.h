@@ -7,7 +7,7 @@
 
 #include <OpenImageDenoise/oidn.hpp>
 
-#define MAX_INPUTS 3
+#define MAX_INPUTS 1
 
 static const char *const HELP = "CG render denoiser based on Intel OpenImageDenoise library";
 static const char *const CLASS = "Denoiser";
@@ -24,7 +24,7 @@ public:
 	int minimum_inputs() const { return MAX_INPUTS; }
 	int maximum_inputs() const { return 1; }
 
-	PackedPreference packedPreference() const { return ePackedPreferencePacked; }
+	// PackedPreference packedPreference() const { return ePackedPreferencePacked; }
 
 	void knobs(Knob_Callback f);
 
@@ -32,7 +32,7 @@ public:
 	void _request(int x, int y, int r, int t, ChannelMask channels, int count);
 	void _open();
 
-	void fetchPlane(ImagePlane &outputPlane);
+	// void fetchPlane(ImagePlane &outputPlane);
 	virtual void renderStripe(ImagePlane& plane);
 
 	const char *input_label(int n, char *) const;
@@ -55,7 +55,7 @@ private:
 
 	int m_numThreads;
 	int m_numRuns;
-	unsigned int m_beautyHeight, m_beautyWidth, m_albedoHeight, m_albedoWidth, m_normalHeight, m_normalWidth;
+	unsigned int m_beautyHeight, m_beautyWidth;
 
 	// OIDN class members
 	oidn::DeviceRef m_device;
@@ -63,7 +63,5 @@ private:
 
 	// buffers
 	std::vector<float> m_beautyPixels;
-	std::vector<float> m_albedoPixels;
-	std::vector<float> m_normalPixels;
 	std::vector<float> m_outputPixels;
 };

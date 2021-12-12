@@ -4,15 +4,9 @@
 #include <iomanip>
 
 #include <DDImage/Black.h>
+#include <DDImage/LUT.h>
 
-#define INPUT_BEAUTY 0
-#define INPUT_ALBEDO 1
-#define INPUT_NORMAL 2
 #define DEBUG 1
-
-// TODO: fix input_format to use the actual format of input (doesn't fetch correct size it's resized/reformatted)
-// TODO: actually use albedo/normal to open call (right now it does nothing)
-// TODO: optimize _request loop so it fetches image only once
 
 DenoiserIop::DenoiserIop(Node *node) : PlanarIop(node)
 {
@@ -23,7 +17,7 @@ DenoiserIop::DenoiserIop(Node *node) : PlanarIop(node)
 	m_numRuns = 1;
 	m_numThreads = 0;
 	m_maxMem = 0.f;
-	m_beautyWidth = m_beautyHeight = m_albedoWidth = m_albedoHeight = m_normalWidth = m_normalHeight = 0;
+	m_beautyWidth = m_beautyHeight = 0;
 
 	m_device = nullptr;
 	m_filter = nullptr;
@@ -119,15 +113,8 @@ void DenoiserIop::knobs(Knob_Callback f)
 
 const char *DenoiserIop::input_label(int n, char *) const
 {
-	switch (n)
-	{
-	case INPUT_BEAUTY:
+	if (n == 0)
 		return "beauty";
-	case INPUT_ALBEDO:
-		return "albedo";
-	case INPUT_NORMAL:
-		return "normal";
-	}
 
 	return 0;
 }
@@ -140,107 +127,47 @@ void DenoiserIop::_validate(bool for_real)
 
 void DenoiserIop::_request(int x, int y, int r, int t, ChannelMask channels, int count)
 {
-	for (int i = 0; i < MAX_INPUTS; ++i)
-	{
-		// TODO: do we need request all available channels? Could be enough to use just Mask_RGBA
-		input(i)->request(x, y, r, t, channels, count);
-	}
+	input(0)->request(x, y, r, t, channels, count);
 }
 
 void DenoiserIop::_open()
 {
 	// initialize beauty AOV and output vector, check resolution
-	if (!dynamic_cast<Black *>(input(INPUT_BEAUTY)))
+	if (!dynamic_cast<Black *>(input(0)))
 	{
-		Iop *op = dynamic_cast<Iop *>(Op::input(INPUT_BEAUTY));
+		Iop *op = dynamic_cast<Iop *>(Op::input(0));
 		m_beautyWidth = op->input_format().width();
 		m_beautyHeight = op->input_format().height();
 		m_beautyPixels.resize(m_beautyWidth * m_beautyHeight * 3);
 		m_outputPixels.resize(m_beautyWidth * m_beautyHeight * 3);
 	}
-
-	if (!dynamic_cast<Black *>(input(INPUT_NORMAL)))
-	{
-		Iop *op = dynamic_cast<Iop *>(Op::input(INPUT_NORMAL));
-		m_normalWidth = op->input_format().width();
-		m_normalHeight = op->input_format().height();
-		if (m_normalWidth != m_beautyWidth || m_normalHeight != m_beautyHeight)
-		{
-			error("Normal input is not the same resolution as beauty. Please match the size.");
-		}
-		m_normalPixels.resize(m_normalWidth * m_normalHeight * 3);
-	}
-
-	if (!dynamic_cast<Black *>(input(INPUT_ALBEDO)))
-	{
-		Iop *op = dynamic_cast<Iop *>(Op::input(INPUT_ALBEDO));
-		m_albedoWidth = op->input_format().width();
-		m_albedoHeight = op->input_format().height();
-		if (m_albedoWidth != m_beautyWidth || m_albedoHeight != m_beautyHeight)
-		{
-			error("Albedo input is not the same resolution as beauty. Please match the size.");
-		}
-		m_albedoPixels.resize(m_albedoWidth * m_albedoHeight * 3);
-	}
-
-	// TODO: iterate over all inputs (normal, albedo)
-	//	for (int i = 0; i < MAX_INPUTS; ++i)
-	//	{
-	Iop *curInput = input(0);
-
-	if (dynamic_cast<Black *>(input(0)))
-	{
-		return;
-	}
 }
 
-void DenoiserIop::fetchPlane(ImagePlane &outputPlane)
+void DenoiserIop::renderStripe(ImagePlane& plane)
 {
-	if (aborted())
-		return;
-
-	input0().fetchPlane(outputPlane);
-	outputPlane.makeUnique();
-
-	// Get imageplane size, different bboxes etc can mess this up, so needs more elaborate handling in practice
-	int width = outputPlane.bounds().w();
-	int height = outputPlane.bounds().h();
-
-	float *destBuffer = nullptr;
-
-	for (int channel = 0; channel < 3; ++channel)
-	{
-		destBuffer = &(outputPlane.writableAt(0, 0, channel));
-
-		// Copy data from imageplane to other buffer
-		memcpy(&m_beautyPixels[width * height * channel], destBuffer, sizeof(float) * width * height);
-	}
-
 	{
 		// OIDN
 		setupOIDN();
 		executeOIDN();
 	}
 
-	// Copy data back
-	for (int channel = 0; channel < 3; ++channel)
-	{
-		destBuffer = &(outputPlane.writableAt(0, 0, channel));
-		memcpy(destBuffer, &m_beautyPixels[width * height * channel], sizeof(float) * width * height);
-	}
-}
+	if (aborted())
+	return;
 
-void DenoiserIop::renderStripe(ImagePlane& plane)
-{
 	plane.makeWritable();
+	const ChannelSet channels = plane.channels();
+    const size_t numComponents = 4;
+    const size_t numPixels = plane.bounds().area();
+    float* dest = plane.writable();
 
-	foreach(z, outPlane.channels()) 
-	{
-		for (Box::iterator it = box.begin(); it != box.end(); it++) 
-		{
-			plane.writableAt(plane.chanNo(z), it.x, it.y) = 0.5;
-		}
-	}
+	foreach(z, channels) {
+        const uint8_t chanOffset = colourIndex(z);
+        Linear::from_float(
+            dest + numPixels * chanOffset,
+            m_outputPixels.data() + chanOffset,
+            numPixels,
+            numComponents);
+    }
 }
 
 static Iop *build(Node *node) { return new DenoiserIop(node); }
