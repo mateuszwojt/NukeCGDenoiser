@@ -30,8 +30,12 @@ public:
 
 	void _validate(bool);
 
-	void getRequests(const Box& box, const ChannelSet& channels, int count, RequestOutput &reqData) const override { }
+	void getRequests(const Box& box, const ChannelSet& channels, int count, RequestOutput &reqData) const;
 	virtual void renderStripe(ImagePlane& plane);
+
+	bool useStripes() const { return false; }
+
+	bool renderFullPlanes() const { return true; }
 
 	const char *input_label(int n, char *) const;
 	static const Iop::Description d;

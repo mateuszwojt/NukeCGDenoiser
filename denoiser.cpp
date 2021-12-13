@@ -122,6 +122,11 @@ void DenoiserIop::_validate(bool for_real)
 	copy_info();
 }
 
+void DenoiserIop::getRequests(const Box & box, const ChannelSet & channels, int count, RequestOutput & reqData) const
+{
+	reqData.request(&input0(), box, channels, count);
+}
+
 void DenoiserIop::renderStripe(ImagePlane &plane)
 {
 	if (aborted() || cancelled())
@@ -138,9 +143,7 @@ void DenoiserIop::renderStripe(ImagePlane &plane)
 		plane.nComps());
 
 	input0().fetchPlane(input_plane);
-	plane.makeWritable();
 
-	const ChannelSet channels = input_plane.channels();
 	const size_t numComponents = 4;
 	const size_t numPixels = input_plane.bounds().area();
 	m_beautyWidth = plane.bounds().w();
@@ -148,12 +151,12 @@ void DenoiserIop::renderStripe(ImagePlane &plane)
 	m_beautyPixels.resize(numPixels * numComponents);
 	m_outputPixels.resize(numPixels * numComponents);
 
-	float *destBuffer = nullptr;
-
-	foreach (z, channels)
+	foreach(z, input_plane.channels())
 	{
-		destBuffer = &(input_plane.writableAt(0, 0, plane.chanNo(z)));
-		memcpy(&m_beautyPixels[numPixels * plane.chanNo(z)], destBuffer, sizeof(float) * plane.rowStride());
+		auto chanNo = input_plane.chanNo(z);
+		auto chanStride = input_plane.chanStride();
+		const float* indata = &input_plane.readable()[chanStride * chanNo];
+		memcpy(&m_beautyPixels[chanStride * chanNo], indata, sizeof(float) * chanStride);
 	}
 
 	{
@@ -164,10 +167,14 @@ void DenoiserIop::renderStripe(ImagePlane &plane)
 		executeOIDN();
 	}
 
-	foreach (z, channels)
+	plane.makeWritable();
+	float* data = plane.writable();
+
+	foreach(z, plane.channels())
 	{
-		destBuffer = &(plane.writableAt(0, 0, plane.chanNo(z)));
-		memcpy(destBuffer, &m_beautyPixels[numPixels * plane.chanNo(z)], sizeof(float) * plane.rowStride());
+		auto chanOffset = colourIndex(z);
+		memcpy(data + plane.chanStride() * chanOffset, &m_outputPixels[plane.chanStride() * chanOffset], 
+			sizeof(float) * plane.chanStride());
 	}
 }
 
