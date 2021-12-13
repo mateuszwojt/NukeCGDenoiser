@@ -39,7 +39,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 find_package(Nuke REQUIRED)
 
 # OpenImageDenoise
-find_package(OpenImageDenoise REQUIRED)
+find_package(OpenImageDenoise)
 if(NOT OPENIMAGEDENOISE_FOUND)
   # use hardocded value for now...
   if(NOT DEFINED OPENIMAGEDENOISE_ROOT_DIR)
