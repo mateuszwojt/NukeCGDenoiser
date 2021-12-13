@@ -1,34 +1,50 @@
 # NukeCGDenoiser
 
-This is a Nuke plugin for denoising CG renders using two different backends - CPU and GPU.
-
-GPU yields faster results (well, obviously). But you can use CPU whenever GPU option is not feasable.
+This is a Nuke plugin for denoising CG renders using Intel's OpenImageDenoise library.
 
 ## Requirements
 
 In order to compile this plugin, you're gonna need:
 
 - CMake 3.9 or later
-- Nuke (tested on 12.1v2, but any modern version of Nuke should work)
+- Nuke (tested on 12.2v5, can't say if it works with 13.x yet)
 - [Intel's OpenImageDenoise](https://github.com/OpenImageDenoise/oidn)
-- [NVIDIA's Optix 7.0](https://developer.nvidia.com/designworks/optix/download)
 
-This plugin should compile on Linux and Windows, since both Intel and NVIDIA backends are supported on these platforms.
+This plugin should compile fine on both Linux and Windows.
 
 ## Building
 
-_**Important**_: If OIDN library is not found, `oidn` submodule will be used to compile this dependency. Note that it requires `git-lfs`, building it without LFS installed will likely fail.
+> OIDN is no longer provided as third party library withing this repository. You need to download the binaries or compile it yourself before building this plugin.
 
-- TODO...
+Just be sure to specify path to the OpenImageDenoise library using `OPENIMAGEDENOISE_ROOT_DIR` variable.
 
+### Linux
 
+```
+git clone https://gitlab.com/mateuszwojt/nukecgdenoiser.git
+cd nukecgdenoiser
+mkdir build && cd build
+cmake -DOPENIMAGEDENOISE_ROOT_DIR=/path/to/oidn ..
+make && make install
+```
 
-## Performance tests
+### Windows
 
-- TODO...
+```
+git clone https://gitlab.com/mateuszwojt/nukecgdenoiser.git
+cd nukecgdenoiser
+mkdir build && cd build
+cmake -G "Visual Studio 14 2015 Win64" -DOPENIMAGEDENOISE_ROOT_DIR=/path/to/oidn ..
+cmake --build . --config Release
+```
 
-## References
+## Troubleshooting
+
+If for some reason plugin cannot be loaded inside Nuke, make sure that you have the path to OpenImageDenoise library appened to your system's `PATH` variable.
+
+## Contributions
 
 I'd like to say "big thanks" to:
 - Marta Nowak, for help in figuring out the contiguos pixel packing
 - Hendrik Proosa, for looking through the code and suggesting some great improvements in image buffer access
+- Christophe Moreau, for pointing out that the old version was broken ;)

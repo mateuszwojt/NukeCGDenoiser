@@ -41,23 +41,22 @@ find_package(Nuke REQUIRED)
 # OpenImageDenoise
 find_package(OpenImageDenoise)
 if(NOT OPENIMAGEDENOISE_FOUND)
-  message(STATUS "ODIN not found, it will be compiled from source")
-  add_subdirectory(thirdparty/oidn)
-endif()
-
-# OptiX
-find_package(Optix)
-
-if(APPLE)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.1")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math")
+  # use hardocded value for now...
+  if(NOT DEFINED OPENIMAGEDENOISE_ROOT_DIR)
+    set(OPENIMAGEDENOISE_ROOT_DIR "C:/dev/oidn-1.4.2.x64.vc14.windows")
+  endif()
+  set(OPENIMAGEDENOISE_INCLUDE_DIR "${OPENIMAGEDENOISE_ROOT_DIR}/include")
+  find_library(OPENIMAGEDENOISE_LIBRARY NAMES OpenImageDenoise PATHS "${OPENIMAGEDENOISE_ROOT_DIR}/lib" NO_DEFAULT_PATH)
+  if(NOT OPENIMAGEDENOISE_LIBRARY)
+    message(FATAL_ERROR "Could not find OpenImageDenoise")
+  endif()
 endif()
 
 # build plugin
 add_library(denoiser SHARED denoiser.cpp)
 set_target_properties(denoiser PROPERTIES PREFIX "")
-target_link_libraries(denoiser PUBLIC ${Nuke_LIBRARIES} OpenImageDenoise)
+target_include_directories(denoiser PRIVATE ${OPENIMAGEDENOISE_INCLUDE_DIR})
+target_link_libraries(denoiser PUBLIC ${Nuke_LIBRARIES} ${OPENIMAGEDENOISE_LIBRARY})
 
 if(MSVC)
   add_definitions(-DWIN32)
