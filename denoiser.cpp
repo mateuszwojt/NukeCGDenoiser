@@ -132,30 +132,21 @@ void DenoiserIop::renderStripe(ImagePlane &plane)
 	if (aborted() || cancelled())
 		return;
 
-	DD::Image::Box input_box = plane.bounds();
-	input_box.intersect(input0().info());
+	input0().fetchPlane(plane);
 
-	// Create image plane from input.
-	DD::Image::ImagePlane input_plane(
-		input_box,
-		plane.packed(),
-		plane.channels(),
-		plane.nComps());
-
-	input0().fetchPlane(input_plane);
-
+	const ChannelSet channels = plane.channels();
 	const size_t numComponents = 4;
-	const size_t numPixels = input_plane.bounds().area();
+	const size_t numPixels = plane.bounds().area();
 	m_beautyWidth = plane.bounds().w();
 	m_beautyHeight = plane.bounds().h();
 	m_beautyPixels.resize(numPixels * numComponents);
 	m_outputPixels.resize(numPixels * numComponents);
 
-	foreach(z, input_plane.channels())
+	foreach(z, channels)
 	{
-		auto chanNo = input_plane.chanNo(z);
-		auto chanStride = input_plane.chanStride();
-		const float* indata = &input_plane.readable()[chanStride * chanNo];
+		auto chanNo = plane.chanNo(z);
+		auto chanStride = plane.chanStride();
+		const float* indata = &plane.readable()[chanStride * chanNo];
 		memcpy(&m_beautyPixels[chanStride * chanNo], indata, sizeof(float) * chanStride);
 	}
 
@@ -170,7 +161,7 @@ void DenoiserIop::renderStripe(ImagePlane &plane)
 	plane.makeWritable();
 	float* data = plane.writable();
 
-	foreach(z, plane.channels())
+	foreach(z, channels)
 	{
 		auto chanOffset = colourIndex(z);
 		memcpy(data + plane.chanStride() * chanOffset, &m_outputPixels[plane.chanStride() * chanOffset], 
