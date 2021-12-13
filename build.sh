@@ -1,5 +1,6 @@
 # download OIDN
 wget -q -P /tmp/ https://github.com/OpenImageDenoise/oidn/releases/download/v1.4.2/oidn-1.4.2.x86_64.linux.tar.gz
+mkdir -p /opt/oidn
 tar -C /opt/oidn -xvzf /tmp/oidn-1.4.2.x86_64.linux.tar.gz
 
 # download and extract Nuke
