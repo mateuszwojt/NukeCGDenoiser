@@ -37,6 +37,11 @@ mkdir build && cd build
 cmake -G "Visual Studio 14 2015 Win64" -DOPENIMAGEDENOISE_ROOT_DIR=/path/to/oidn ..
 cmake --build . --config Release
 ```
+
+## Troubleshooting
+
+If for some reason plugin cannot be loaded inside Nuke, make sure that you have the path to OpenImageDenoise library appened to your system's `PATH` variable.
+
 ## Contributions
 
 I'd like to say "big thanks" to:
