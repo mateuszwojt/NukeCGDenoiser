@@ -7,8 +7,6 @@
 
 #include <OpenImageDenoise/oidn.hpp>
 
-#define MAX_INPUTS 1
-
 static const char *const HELP = "CG render denoiser based on Intel OpenImageDenoise library";
 static const char *const CLASS = "Denoiser";
 
@@ -21,10 +19,10 @@ public:
 	DenoiserIop(Node *node);
 
 	// Nuke internal methods
-	int minimum_inputs() const { return MAX_INPUTS; }
+	int minimum_inputs() const { return 1; }
 	int maximum_inputs() const { return 1; }
 
-	PackedPreference packedPreference() const { return ePackedPreferencePacked; }
+	PackedPreference packedPreference() const { return ePackedPreferenceUnpacked; }
 
 	void knobs(Knob_Callback f);
 
