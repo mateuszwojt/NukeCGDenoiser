@@ -3,9 +3,6 @@
 #include <iostream>
 #include <iomanip>
 
-#include <DDImage/Black.h>
-#include <DDImage/LUT.h>
-
 #define DEBUG 1
 
 DenoiserIop::DenoiserIop(Node *node) : PlanarIop(node)
@@ -16,7 +13,7 @@ DenoiserIop::DenoiserIop(Node *node) : PlanarIop(node)
 	m_numRuns = 1;
 	m_numThreads = 0;
 	m_maxMem = 0.f;
-	m_beautyWidth = m_beautyHeight = 0;
+	width = height = 0;
 
 	m_device = nullptr;
 	m_filter = nullptr;
@@ -43,8 +40,8 @@ void DenoiserIop::setupOIDN()
 		m_filter = m_device.newFilter("RT");
 
 		// set the images
-		m_filter.setImage("color", (void *)&m_beautyPixels[0], oidn::Format::Float3, m_beautyWidth, m_beautyHeight);
-		m_filter.setImage("output", (void *)&m_outputPixels[0], oidn::Format::Float3, m_beautyWidth, m_beautyHeight);
+		m_filter.setImage("color", m_beautyPixels.data(), oidn::Format::Float3, width, height);
+		m_filter.setImage("output", m_outputPixels.data(), oidn::Format::Float3, width, height);
 
 		// set filter parameters
 		m_filter.set("hdr", m_bHDR);
@@ -134,20 +131,25 @@ void DenoiserIop::renderStripe(ImagePlane &plane)
 
 	input0().fetchPlane(plane);
 
-	const ChannelSet channels = plane.channels();
-	const size_t numComponents = 4;
+	const size_t numComponents = 3;
 	const size_t numPixels = plane.bounds().area();
-	m_beautyWidth = plane.bounds().w();
-	m_beautyHeight = plane.bounds().h();
+	Box bounds = plane.bounds();
+	width = plane.bounds().w();
+	height = plane.bounds().h();
 	m_beautyPixels.resize(numPixels * numComponents);
 	m_outputPixels.resize(numPixels * numComponents);
+	auto chanStride = plane.chanStride();
 
-	foreach(z, channels)
+	for(auto chanNo = 0; chanNo < numComponents; chanNo++)
 	{
-		auto chanNo = plane.chanNo(z);
-		auto chanStride = plane.chanStride();
 		const float* indata = &plane.readable()[chanStride * chanNo];
-		memcpy(&m_beautyPixels[chanStride * chanNo], indata, sizeof(float) * chanStride);
+
+		for (int i = 0; i < width; i++)
+		{
+			for (int j = 0; j < height; j++) {
+				m_beautyPixels[(j * width + i) * numComponents + chanNo] = indata[j * width + i];
+			}
+		}
 	}
 
 	{
@@ -158,14 +160,16 @@ void DenoiserIop::renderStripe(ImagePlane &plane)
 		executeOIDN();
 	}
 
-	plane.makeWritable();
-	float* data = plane.writable();
-
-	foreach(z, channels)
+	for (auto chanNo = 0; chanNo < numComponents; chanNo++)
 	{
-		auto chanOffset = colourIndex(z);
-		memcpy(data + plane.chanStride() * chanOffset, &m_outputPixels[plane.chanStride() * chanOffset], 
-			sizeof(float) * plane.chanStride());
+		float* outdata = &plane.writable()[chanStride * chanNo];
+
+		for (int i = 0; i < width; i++)
+		{
+			for (int j = 0; j < height; ++j) {
+				outdata[j * width + i] = m_outputPixels[(j * width + i) * numComponents + chanNo];
+			}
+		}
 	}
 }
 

@@ -54,7 +54,7 @@ private:
 
 	int m_numThreads;
 	int m_numRuns;
-	unsigned int m_beautyHeight, m_beautyWidth;
+	unsigned int width, height;
 
 	// OIDN class members
 	oidn::DeviceRef m_device;
