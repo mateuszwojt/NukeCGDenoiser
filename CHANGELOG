@@ -1,0 +1,9 @@
+# Changelog
+
+## [0.9.1] - 2021-12-19
+
+- Fixed the wrong pixel packing schema, by moving from interleaved rows to contiguous pixel packing
+
+## [0.9.0] - 2021-12-13
+
+- Complete refactor of the plugin, including the image plane reading method
