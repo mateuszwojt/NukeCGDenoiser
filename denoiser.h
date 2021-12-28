@@ -20,7 +20,7 @@ public:
 
 	// Nuke internal methods
 	int minimum_inputs() const { return 1; }
-	int maximum_inputs() const { return 1; }
+	int maximum_inputs() const { return 3; }
 
 	PackedPreference packedPreference() const { return ePackedPreferenceUnpacked; }
 
@@ -54,7 +54,10 @@ private:
 
 	int m_numThreads;
 	int m_numRuns;
-	unsigned int width, height;
+	unsigned int m_width, m_height;
+
+	ChannelSet m_defaultChannels;
+	int m_defaultNumberOfChannels;
 
 	// OIDN class members
 	oidn::DeviceRef m_device;
@@ -62,5 +65,7 @@ private:
 
 	// buffers
 	std::vector<float> m_beautyPixels;
+	std::vector<float> m_albedoPixels;
+	std::vector<float> m_normalPixels;
 	std::vector<float> m_outputPixels;
 };
