@@ -31,3 +31,5 @@ scr/*.pro.user*
 
 .vscode/
 .vscode/*
+
+public

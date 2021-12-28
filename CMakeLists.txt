@@ -111,4 +111,6 @@ install(
     runtime
 )
 install(FILES menu.py DESTINATION ${CMAKE_INSTALL_PREFIX})
+# this is only for CI build to pick up and package menu.py with the plugin release
+install(FILES menu.py DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/init.py DESTINATION ${Nuke_HOME_DIR})

@@ -1,15 +1,20 @@
 image: centos:7.8.2003
 
-variables:
-  GIT_SUBMODULE_STRATEGY: recursive
+include:
+  - 'https://gitlab.com/mateuszwojt/ci-templates/raw/main/.before-script-template.yml'
 
-before_script:
-  - yum -y install epel-release
-  - yum -y update
-  - yum -y install cmake3 gcc gcc-c++ make wget unzip
-  - yum -y install freeglut freeglut-devel libXi-devel libXrandr-devel libXinerama-devel libXcursor-devel
-  - yum -y clean all
-  - ln -s /usr/bin/cmake3 /usr/bin/cmake
+stages:
+  - build
+  - upload
+  - release
+  - deploy
+
+variables:
+  PACKAGE_VERSION: "0.9.2"
+  PLUGIN_NAME: "denoiser"
+  PLUGIN_RELEASE_NAME: "${PLUGIN_NAME}-${PACKAGE_VERSION}"
+  PACKAGE_REGISTRY_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/myawesomerelease/${PACKAGE_VERSION}"
+
 
 build:
   stage: build
@@ -18,4 +23,38 @@ build:
     - ./build.sh
   artifacts:
     paths:
-      - build/
+      - build/${PLUGIN_NAME}.so
+      - build/menu.py
+
+upload:
+  stage: upload
+  image: curlimages/curl:latest
+  rules:
+    - if: $CI_COMMIT_TAG
+  script:
+    - |
+      curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file build/${PLUGIN_NAME}.so "${PACKAGE_REGISTRY_URL}/${PLUGIN_RELEASE_NAME}"
+    - |
+      curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file build/menu.py "${PACKAGE_REGISTRY_URL}/${PLUGIN_RELEASE_NAME}"
+
+release:
+  stage: release
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  rules:
+    - if: $CI_COMMIT_TAG
+  script:
+    - |
+      release-cli create --name "Release $CI_COMMIT_TAG" --tag-name $CI_COMMIT_TAG \
+        --assets-link "{\"name\":\"${PLUGIN_RELEASE_NAME}\",\"url\":\"${PACKAGE_REGISTRY_URL}/${PLUGIN_RELEASE_NAME}\"}"
+
+pages:
+  stage: deploy
+  image: python:3.7-alpine
+  script:
+  - pip install -U sphinx
+  - sphinx-build -b html . public
+  artifacts:
+    paths:
+    - public
+  only:
+  - master

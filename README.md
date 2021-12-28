@@ -42,6 +42,12 @@ cmake --build . --config Release
 
 If for some reason plugin cannot be loaded inside Nuke, make sure that you have the path to OpenImageDenoise library appened to your system's `PATH` variable.
 
+## Limitations
+
+Currently there's no internal validation of the incoming AOV resolution. If your passes are different size, it can introduce artifacts into the denoised image. Make sure to reformat such AOVs, so all passes are at the same image resolution.
+
+This plugin works on a limited number of channels at the moment. Only RGB components are processed, alpha is ignored.
+
 ## Contributions
 
 I'd like to say "big thanks" to:
