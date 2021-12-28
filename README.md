@@ -2,6 +2,8 @@
 
 This is a Nuke plugin for denoising CG renders using Intel's OpenImageDenoise library.
 
+[Documentation](https://mateuszwojt.gitlab.io/nukecgdenoiser)
+
 ## Requirements
 
 In order to compile this plugin, you're gonna need:
