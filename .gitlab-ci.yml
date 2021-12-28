@@ -10,7 +10,7 @@ variables:
   PACKAGE_VERSION: "0.9.2"
   PLUGIN_NAME: "denoiser"
   PLUGIN_RELEASE_NAME: "${PLUGIN_NAME}-${PACKAGE_VERSION}"
-  PACKAGE_REGISTRY_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/myawesomerelease/${PACKAGE_VERSION}"
+  PACKAGE_REGISTRY_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/binaries/${PACKAGE_VERSION}"
 
 
 build:
@@ -31,9 +31,9 @@ upload:
     - if: $CI_COMMIT_TAG
   script:
     - |
-      curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file build/${PLUGIN_NAME}.so "${PACKAGE_REGISTRY_URL}/${PLUGIN_RELEASE_NAME}"
+      curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file build/${PLUGIN_NAME}.so "${PACKAGE_REGISTRY_URL}/${PLUGIN_NAME}.so"
     - |
-      curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file build/menu.py "${PACKAGE_REGISTRY_URL}/${PLUGIN_RELEASE_NAME}"
+      curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file build/menu.py "${PACKAGE_REGISTRY_URL}/menu.py"
 
 release:
   stage: release
