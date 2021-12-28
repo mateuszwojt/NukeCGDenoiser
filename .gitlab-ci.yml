@@ -22,7 +22,8 @@ build:
     - ./build.sh
   artifacts:
     paths:
-      - build/
+      - build/${PLUGIN_NAME}.so
+      - build/menu.py
 
 upload:
   stage: upload
