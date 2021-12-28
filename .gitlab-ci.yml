@@ -47,8 +47,10 @@ release:
 
 pages:
   stage: deploy
+  image: python:3.7-alpine
   script:
-  - mv .public public
+  - pip install -U sphinx
+  - sphinx-build -b html . public
   artifacts:
     paths:
     - public
