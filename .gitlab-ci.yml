@@ -1,8 +1,3 @@
-image: centos:7.8.2003
-
-include:
-  - 'https://gitlab.com/mateuszwojt/ci-templates/raw/main/.before-script-template.yml'
-
 stages:
   - build
   - upload
@@ -18,6 +13,9 @@ variables:
 
 build:
   stage: build
+  image: centos:7.8.2003
+  include:
+  - 'https://gitlab.com/mateuszwojt/ci-templates/raw/main/.before-script-template.yml'
   script:
     - chmod +x build.sh
     - ./build.sh
