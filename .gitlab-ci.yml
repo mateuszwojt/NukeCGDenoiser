@@ -44,3 +44,13 @@ release:
     - |
       release-cli create --name "Release $CI_COMMIT_TAG" --tag-name $CI_COMMIT_TAG \
         --assets-link "{\"name\":\"${PLUGIN_RELEASE_NAME}\",\"url\":\"${PACKAGE_REGISTRY_URL}/${PLUGIN_RELEASE_NAME}\"}"
+
+pages:
+  stage: deploy
+  script:
+  - mv .public public
+  artifacts:
+    paths:
+    - public
+  only:
+  - master
