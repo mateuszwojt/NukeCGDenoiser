@@ -24,6 +24,7 @@ build:
   artifacts:
     paths:
       - build/${PLUGIN_NAME}.so
+      - build/${PLUGIN_RELEASE_NAME_LINUX}.tar.gz
 
 upload:
   stage: upload
