@@ -3,8 +3,6 @@
 #include <iostream>
 #include <iomanip>
 
-#define DEBUG 1
-
 DenoiserIop::DenoiserIop(Node *node) : PlanarIop(node)
 {
 	// initialize all members
@@ -18,8 +16,8 @@ DenoiserIop::DenoiserIop(Node *node) : PlanarIop(node)
 	m_device = nullptr;
 	m_filter = nullptr;
 
-	kDefaultChannels = Mask_RGB;
-	kDefaultNumberOfChannels = kDefaultChannels.size();
+	m_defaultChannels = Mask_RGB;
+	m_defaultNumberOfChannels = m_defaultChannels.size();
 };
 
 void DenoiserIop::setupOIDN()
@@ -75,30 +73,15 @@ void DenoiserIop::executeOIDN()
 		int sum = 0;
 		for (unsigned int i = 0; i < m_numRuns; i++)
 		{
-			if (DEBUG)
-			{
-				std::cout << "Denoising..." << std::endl;
-			}
 			clock_t start = clock(), diff;
 			m_filter.execute();
 			diff = clock() - start;
 			int msec = diff * 1000 / CLOCKS_PER_SEC;
-			if (DEBUG)
-			{
-				if (m_numRuns > 1)
-					std::cout << "Denoising run " << i << " complete in " << msec / 1000 << "." << std::setfill('0') << std::setw(3) << msec % 1000 << " seconds" << std::endl;
-				else
-					std::cout << "Denoising complete in " << msec / 1000 << "." << std::setfill('0') << std::setw(3) << msec % 1000 << " seconds" << std::endl;
-			}
 			sum += msec;
 		}
 		if (m_numRuns > 1)
 		{
 			sum /= m_numRuns;
-			if (DEBUG)
-			{
-				std::cout << "Denoising avg of " << m_numRuns << " complete in " << sum / 1000 << "." << std::setfill('0') << std::setw(3) << sum % 1000 << " seconds" << std::endl;
-			}
 		}
 	}
 	catch (const std::runtime_error &e)
@@ -152,7 +135,8 @@ void DenoiserIop::renderStripe(ImagePlane &plane)
 	const Box imageFormat = info().format();
 	m_width = imageFormat.w();
 	m_height = imageFormat.h();
-	m_outputPixels.resize(m_width * m_height * kDefaultNumberOfChannels);
+	auto inputPlaneSize = m_width * m_height * m_defaultNumberOfChannels;
+	m_outputPixels.resize(inputPlaneSize);
 
 	// Clear vectors so it does not leave any residual pixels when disconnecting inputs
 	m_albedoPixels.clear();
@@ -185,10 +169,10 @@ void DenoiserIop::renderStripe(ImagePlane &plane)
 		const int ft = imageBounds.t();
 
 		// Request input based on our format.
-		inputIop->request(fx, fy, fr, ft, kDefaultChannels, 0);
+		inputIop->request(fx, fy, fr, ft, m_defaultChannels, 0);
 
 		// Fetch plane from input into the image plane.
-		ImagePlane inputPlane(imageBounds, false, kDefaultChannels, kDefaultNumberOfChannels);
+		ImagePlane inputPlane(imageBounds, false, m_defaultChannels, m_defaultNumberOfChannels);
 		inputIop->fetchPlane(inputPlane);
 
 		auto chanStride = inputPlane.chanStride();
@@ -196,26 +180,26 @@ void DenoiserIop::renderStripe(ImagePlane &plane)
 
 		// Allocate memory for each vector of pixels.
 		if (i == 0)
-			m_beautyPixels.resize(numPixels * kDefaultNumberOfChannels);
+			m_beautyPixels.resize(numPixels * m_defaultNumberOfChannels);
 		if (i == 1)
-			m_albedoPixels.resize(numPixels * kDefaultNumberOfChannels);
+			m_albedoPixels.resize(numPixels * m_defaultNumberOfChannels);
 		if (i == 2)
-			m_normalPixels.resize(numPixels * kDefaultNumberOfChannels);
+			m_normalPixels.resize(numPixels * m_defaultNumberOfChannels);
 
 		// Iterate over each channel and get pixel values.
-		for (auto chanNo = 0; chanNo < kDefaultNumberOfChannels; chanNo++)
+		for (auto chanNo = 0; chanNo < m_defaultNumberOfChannels; chanNo++)
 		{
 			const float* indata = &inputPlane.readable()[chanStride * chanNo];
 
-			for (int x = 0; x < fr; x++)
+			for (auto x = 0; x < fr; x++)
 			{
-				for (int y = 0; y < ft; y++) {
+				for (auto y = 0; y < ft; y++) {
 					if (i == 0)
-						m_beautyPixels[(y * fr + x) * kDefaultNumberOfChannels + chanNo] = indata[y * fr + x];
+						m_beautyPixels[(y * fr + x) * m_defaultNumberOfChannels + chanNo] = indata[y * fr + x];
 					if (i == 1)
-						m_albedoPixels[(y * fr + x) * kDefaultNumberOfChannels + chanNo] = indata[y * fr + x];
+						m_albedoPixels[(y * fr + x) * m_defaultNumberOfChannels + chanNo] = indata[y * fr + x];
 					if (i == 2)
-						m_normalPixels[(y * fr + x) * kDefaultNumberOfChannels + chanNo] = indata[y * fr + x];
+						m_normalPixels[(y * fr + x) * m_defaultNumberOfChannels + chanNo] = indata[y * fr + x];
 				}
 			}
 		}
@@ -230,14 +214,14 @@ void DenoiserIop::renderStripe(ImagePlane &plane)
 	}
 
 	// Copy final output into the image plane.
-	for (auto chanNo = 0; chanNo < kDefaultNumberOfChannels; chanNo++)
+	for (auto chanNo = 0; chanNo < m_defaultNumberOfChannels; chanNo++)
 	{
 		float* outdata = &plane.writable()[plane.chanStride() * chanNo];
 
-		for (int i = 0; i < m_width; i++)
+		for (auto i = 0; i < m_width; i++)
 		{
-			for (int j = 0; j < m_height; ++j) {
-				outdata[j * m_width + i] = m_outputPixels[(j * m_width + i) * kDefaultNumberOfChannels + chanNo];
+			for (auto j = 0; j < m_height; ++j) {
+				outdata[j * m_width + i] = m_outputPixels[(j * m_width + i) * m_defaultNumberOfChannels + chanNo];
 			}
 		}
 	}

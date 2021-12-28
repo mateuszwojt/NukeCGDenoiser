@@ -56,8 +56,8 @@ private:
 	int m_numRuns;
 	unsigned int m_width, m_height;
 
-	ChannelSet kDefaultChannels;
-	int kDefaultNumberOfChannels;
+	ChannelSet m_defaultChannels;
+	int m_defaultNumberOfChannels;
 
 	// OIDN class members
 	oidn::DeviceRef m_device;
