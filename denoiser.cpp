@@ -1,3 +1,5 @@
+// Copyright (c) 2021 Mateusz Wojt
+
 #include "denoiser.h"
 
 #include <iostream>

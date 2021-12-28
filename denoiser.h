@@ -1,3 +1,5 @@
+// Copyright (c) 2021 Mateusz Wojt
+
 #include <DDImage/PlanarIop.h>
 #include <DDImage/Interest.h>
 #include <DDImage/Row.h>
