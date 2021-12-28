@@ -7,6 +7,7 @@ stages:
   - build
   - upload
   - release
+  - deploy
 
 variables:
   PACKAGE_VERSION: "0.9.2"
@@ -45,3 +46,15 @@ release:
     - |
       release-cli create --name "Release $CI_COMMIT_TAG" --tag-name $CI_COMMIT_TAG \
         --assets-link "{\"name\":\"${PLUGIN_RELEASE_NAME}\",\"url\":\"${PACKAGE_REGISTRY_URL}/${PLUGIN_RELEASE_NAME}\"}"
+
+pages:
+  stage: deploy
+  image: python:3.7-alpine
+  script:
+  - pip install -U sphinx
+  - sphinx-build -b html . public
+  artifacts:
+    paths:
+    - public
+  only:
+  - master
