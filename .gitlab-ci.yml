@@ -1,5 +1,11 @@
 include: 'https://gitlab.com/mateuszwojt/ci-templates/raw/main/.before-script-template.yml'
 
+stages:
+  - build
+  - upload
+  - release
+  - deploy
+
 variables:
   PACKAGE_VERSION: "0.9.2"
   PLUGIN_NAME: "denoiser"
@@ -40,6 +46,7 @@ release:
 
 pages:
   stage: deploy
+  image: python:3.7-alpine
   script:
     - pip install -U sphinx
     - sphinx-build -b html . public
@@ -51,6 +58,10 @@ pages:
 
 make-badge:
   stage: deploy
+  image: ruby:2.5
+  before_script:
+    - apt-get update -y
+    - apt-get install -y jq curl
   script:
     - version=$(cat VERSION.txt)
     - version_badge_id=$(curl --header "PRIVATE-TOKEN:${API_TOKEN}" https://gitlab.com/api/v4/projects/${CI_PROJECT_ID}/badges | jq -c 'map(select(.name | contains("version")))[0].id')
