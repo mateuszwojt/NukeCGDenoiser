@@ -1,18 +1,11 @@
 include: 'https://gitlab.com/mateuszwojt/ci-templates/raw/main/.before-script-template.yml'
 
-stages:
-  - build
-  - upload
-  - release
-  - deploy
-
 variables:
   PACKAGE_VERSION: "0.9.2"
   PLUGIN_NAME: "denoiser"
   PLUGIN_RELEASE_NAME: "${PLUGIN_NAME}-${PACKAGE_VERSION}"
   PLUGIN_RELEASE_NAME_LINUX: "${PLUGIN_RELEASE_NAME}.linux"
   PACKAGE_REGISTRY_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/NukeCGDenoiser/${PACKAGE_VERSION}"
-
 
 build:
   stage: build
@@ -47,7 +40,6 @@ release:
 
 pages:
   stage: deploy
-  image: python:3.7-alpine
   script:
     - pip install -U sphinx
     - sphinx-build -b html . public
