@@ -13,7 +13,6 @@ variables:
   PLUGIN_RELEASE_NAME_LINUX: "${PLUGIN_RELEASE_NAME}.linux"
   PACKAGE_REGISTRY_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/NukeCGDenoiser/${PACKAGE_VERSION}"
 
-
 build:
   stage: build
   image: centos:7.8.2003
@@ -48,9 +47,6 @@ release:
 pages:
   stage: deploy
   image: python:3.7-alpine
-  before_script:
-    - apt-get update -y
-    - apt-get install -y jq curl
   script:
     - pip install -U sphinx
     - sphinx-build -b html . public
@@ -62,6 +58,10 @@ pages:
 
 make-badge:
   stage: deploy
+  image: ruby:2.5
+  before_script:
+    - apt-get update -y
+    - apt-get install -y jq curl
   script:
     - version=$(cat VERSION.txt)
     - version_badge_id=$(curl --header "PRIVATE-TOKEN:${API_TOKEN}" https://gitlab.com/api/v4/projects/${CI_PROJECT_ID}/badges | jq -c 'map(select(.name | contains("version")))[0].id')
