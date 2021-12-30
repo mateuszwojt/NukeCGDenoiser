@@ -1,5 +1,7 @@
 # NukeCGDenoiser
 
+![](images/denoiser_node_usage.png)
+
 This is a Nuke plugin for denoising CG renders using Intel's OpenImageDenoise library.
 
 [Documentation](https://mateuszwojt.gitlab.io/nukecgdenoiser)
