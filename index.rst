@@ -8,6 +8,8 @@ Nuke CG Denoiser
 Introduction
 ============
 
+.. image:: images/denoiser_node_usage.png
+
 Nuke CG Denoiser is a plugin for Foundry's Nuke written in C++. It allows denoising CG renders using Intel's OpenImageDenoise library.
 
 Installing OpenImageDenoise
@@ -51,5 +53,25 @@ Installing the plugin
 5. Save the file, launch Nuke.
 6. You should be able to create the node by hitting Tab key and typing Denoiser or using the dedicated menu.
 
+Usage
+=====
 
+Denoiser node has three inputs for each of the AOVs that can be processed by the denoiser:
 
+- **beauty** (default)
+- **albedo** (optional)
+- **normals** (optional)
+
+Albedo and normals are not required, but it should yield better result if you use all three AOVs.
+
+Parameters
+==========
+
+.. image:: images/denoiser_node_params.png
+
+Denoiser node has the following knobs:
+
+- **hdr** - use if the incoming main input image is high-dynamic range
+- **affinity** - enables thread affinitization
+- **maxmem** - approximate maximum scratch memory to use in megabytes
+- **num_runs** - number of times the denoise filter is executed on the image
