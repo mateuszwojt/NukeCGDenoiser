@@ -42,7 +42,7 @@ release:
   script:
     - |
       release-cli create --name "Release $CI_COMMIT_TAG" --tag-name $CI_COMMIT_TAG \
-        --assets-link "{\"name\":\"${PLUGIN_RELEASE_NAME}\",\"url\":\"${PACKAGE_REGISTRY_URL}/${PLUGIN_RELEASE_NAME_LINUX}.tar.gz\"}"
+        --assets-link "{\"name\":\"${PLUGIN_RELEASE_NAME_LINUX}.tar.gz\",\"url\":\"${PACKAGE_REGISTRY_URL}/${PLUGIN_RELEASE_NAME_LINUX}.tar.gz\"}"
 
 pages:
   stage: deploy
@@ -59,6 +59,8 @@ pages:
 make-badge:
   stage: deploy
   image: ruby:2.5
+  rules:
+    - if: $CI_COMMIT_TAG
   before_script:
     - apt-get update -y
     - apt-get install -y jq curl
@@ -66,5 +68,3 @@ make-badge:
     - version=$(cat VERSION.txt)
     - version_badge_id=$(curl --header "PRIVATE-TOKEN:${API_TOKEN}" https://gitlab.com/api/v4/projects/${CI_PROJECT_ID}/badges | jq -c 'map(select(.name | contains("version")))[0].id')
     - curl --request PUT --header "PRIVATE-TOKEN:${API_TOKEN}" --data "image_url=https://img.shields.io/badge/version-${version}-blue" https://gitlab.com/api/v4/projects/${CI_PROJECT_ID}/badges/${version_badge_id}
-  only:
-  - master
