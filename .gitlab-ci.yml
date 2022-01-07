@@ -15,7 +15,7 @@ variables:
   PLUGIN_RELEASE_NAME_WIN64: "${PLUGIN_RELEASE_NAME}.win64"
   PACKAGE_REGISTRY_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/NukeCGDenoiser/${PACKAGE_VERSION}"
 
-build:linux:gcc:
+build:linux:
   stage: build
   script:
     - chmod +x scripts/linux_install_nuke.sh
@@ -27,7 +27,7 @@ build:linux:gcc:
     paths:
       - build/${PLUGIN_RELEASE_NAME_LINUX}.tar.gz
 
-build:macos:cpp:
+build:macos:
   stage: build
   script:
     - chmod +x scripts/macos_install_nuke.sh
