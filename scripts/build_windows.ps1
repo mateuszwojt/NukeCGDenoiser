@@ -1,5 +1,5 @@
 # download OIDN
-Invoke-WebRequest -Uri "https://github.com/OpenImageDenoise/oidn/releases/download/v1.4.2/oidn-1.4.2.x64.vc14.windows.zip" -OutFile "oidn-1.4.2.x64.vc14.windows.zip"
+Invoke-WebRequest -Uri "https://github.com/OpenImageDenoise/oidn/releases/download/v1.4.2/oidn-1.4.2.x64.vc14.windows.zip" -OutFile "C:\oidn-1.4.2.x64.vc14.windows.zip"
 Expand-Archive "C:\oidn-1.4.2.x64.vc14.windows.zip" -DestinationPath "C:\oidn-1.4.2.x64.vc14.windows"
 
 # build plugin

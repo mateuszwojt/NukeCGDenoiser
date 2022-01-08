@@ -3,3 +3,4 @@ Invoke-WebRequest -Uri "https://thefoundry.s3.amazonaws.com/products/nuke/releas
 Expand-Archive "C:\Nuke12.2v10-win-x86_64.zip" -DestinationPath "C:\Nuke12.2v10-win-x86_64"
 cd "C:\Nuke12.2v10-win-x86_64"
 .\Nuke12.2v10-win-x86_64.exe /S /ACCEPT-FOUNDRY-EULA
+cd $CI_PROJECT_DIR
