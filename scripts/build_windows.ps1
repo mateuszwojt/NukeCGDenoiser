@@ -4,7 +4,8 @@ Expand-Archive "C:\oidn-1.4.2.x64.vc14.windows.zip" -DestinationPath "C:\oidn-1.
 
 # build plugin
 cd $CI_PROJECT_DIR
-mkdir build && cd build
+mkdir build
+cd build
 cmake -G "Visual Studio 14 2015 Win64" -DOPENIMAGEDENOISE_ROOT_DIR="C:\oidn-1.4.2.x64.vc14.windows" ..
 cmake --build . --config Release
 cd ..
