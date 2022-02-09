@@ -27,17 +27,17 @@ build:linux:
     paths:
       - build/${PLUGIN_RELEASE_NAME_LINUX}.tar.gz
 
-build:macos:
-  stage: build
-  script:
-    - chmod +x scripts/macos_install_nuke.sh
-    - chmod +x scripts/build_macos.sh
-    - ./scripts/macos_install_nuke.sh
-    - ./scripts/build_macos.sh
-    - cd build && tar -cvzf ${PLUGIN_RELEASE_NAME_MACOS}.tar.gz ${PLUGIN_NAME}.dylib menu.py && cd ..
-  artifacts:
-    paths:
-      - build/${PLUGIN_RELEASE_NAME_MACOS}.tar.gz
+# build:macos:
+#   stage: build
+#   script:
+#     - chmod +x scripts/macos_install_nuke.sh
+#     - chmod +x scripts/build_macos.sh
+#     - ./scripts/macos_install_nuke.sh
+#     - ./scripts/build_macos.sh
+#     - cd build && tar -cvzf ${PLUGIN_RELEASE_NAME_MACOS}.tar.gz ${PLUGIN_NAME}.dylib menu.py && cd ..
+#   artifacts:
+#     paths:
+#       - build/${PLUGIN_RELEASE_NAME_MACOS}.tar.gz
 
 build:windows:
   stage: build
@@ -57,8 +57,8 @@ upload:
   script:
     - |
       curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file build/${PLUGIN_RELEASE_NAME_LINUX}.tar.gz "${PACKAGE_REGISTRY_URL}/${PLUGIN_RELEASE_NAME_LINUX}.tar.gz"
-    - |
-      curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file build/${PLUGIN_RELEASE_NAME_MACOS}.tar.gz "${PACKAGE_REGISTRY_URL}/${PLUGIN_RELEASE_NAME_MACOS}.tar.gz"
+    # - |
+    #   curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file build/${PLUGIN_RELEASE_NAME_MACOS}.tar.gz "${PACKAGE_REGISTRY_URL}/${PLUGIN_RELEASE_NAME_MACOS}.tar.gz"
     - |
       curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file build/${PLUGIN_RELEASE_NAME_WIN64}.zip "${PACKAGE_REGISTRY_URL}/${PLUGIN_RELEASE_NAME_WIN64}.zip"
 
@@ -71,7 +71,6 @@ release:
     - |
       release-cli create --name "Release $CI_COMMIT_TAG" --tag-name $CI_COMMIT_TAG \
         --assets-link "{\"name\":\"${PLUGIN_RELEASE_NAME_LINUX}.tar.gz\",\"url\":\"${PACKAGE_REGISTRY_URL}/${PLUGIN_RELEASE_NAME_LINUX}.tar.gz\"}" \
-        --assets-link "{\"name\":\"${PLUGIN_RELEASE_NAME_MACOS}.tar.gz\",\"url\":\"${PACKAGE_REGISTRY_URL}/${PLUGIN_RELEASE_NAME_MACOS}.tar.gz\"}" \
         --assets-link "{\"name\":\"${PLUGIN_RELEASE_NAME_WIN64}.zip\",\"url\":\"${PACKAGE_REGISTRY_URL}/${PLUGIN_RELEASE_NAME_WIN64}.zip\"}" \
 
 pages:
