@@ -41,10 +41,6 @@ find_package(Nuke REQUIRED)
 # OpenImageDenoise
 find_package(OpenImageDenoise)
 if(NOT OPENIMAGEDENOISE_FOUND)
-  # use hardocded value for now...
-  if(NOT DEFINED OPENIMAGEDENOISE_ROOT_DIR)
-    set(OPENIMAGEDENOISE_ROOT_DIR "C:/dev/oidn-1.4.2.x64.vc14.windows")
-  endif()
   set(OPENIMAGEDENOISE_INCLUDE_DIR "${OPENIMAGEDENOISE_ROOT_DIR}/include")
   find_library(OPENIMAGEDENOISE_LIBRARY NAMES OpenImageDenoise PATHS "${OPENIMAGEDENOISE_ROOT_DIR}/lib" NO_DEFAULT_PATH)
   if(NOT OPENIMAGEDENOISE_LIBRARY)
