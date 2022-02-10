@@ -48,11 +48,7 @@ if(NOT OPENIMAGEDENOISE_FOUND)
   endif()
 endif()
 
-# build plugin
-add_library(denoiser SHARED denoiser.cpp)
-set_target_properties(denoiser PROPERTIES PREFIX "")
-target_include_directories(denoiser PRIVATE ${OPENIMAGEDENOISE_INCLUDE_DIR} ${Nuke_INCLUDE_DIR})
-target_link_libraries(denoiser PUBLIC ${Nuke_LIBRARIES} ${OPENIMAGEDENOISE_LIBRARY})
+add_subdirectory(src)
 
 if(MSVC)
   add_definitions(-DWIN32)
@@ -96,16 +92,7 @@ else()
   file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/init.py "import nuke\n\nnuke.pluginAddPath('${CMAKE_INSTALL_PREFIX}')\n\n")
 endif()
 
-install(
-  TARGETS
-    denoiser
-  RUNTIME DESTINATION
-    ${CMAKE_INSTALL_PREFIX}
-  LIBRARY DESTINATION
-    ${CMAKE_INSTALL_PREFIX}
-  COMPONENT
-    runtime
-)
+
 install(FILES menu.py DESTINATION ${CMAKE_INSTALL_PREFIX})
 # this is only for CI build to pick up and package menu.py with the plugin release
 install(FILES menu.py DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
