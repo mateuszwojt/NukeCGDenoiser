@@ -22,7 +22,7 @@ build:linux:
     - chmod +x scripts/build_linux.sh
     - ./scripts/linux_install_nuke.sh
     - ./scripts/build_linux.sh
-    - cd build && tar -cvzf ${PLUGIN_RELEASE_NAME_LINUX}.tar.gz ${PLUGIN_NAME}.so menu.py && cd ..
+    - cd build && tar -cvzf ${PLUGIN_RELEASE_NAME_LINUX}.tar.gz src/${PLUGIN_NAME}.so menu.py && cd ..
   artifacts:
     paths:
       - build/${PLUGIN_RELEASE_NAME_LINUX}.tar.gz
@@ -44,7 +44,7 @@ build:windows:
   script:
     - .\scripts\windows_install_nuke.ps1
     - .\scripts\build_windows.ps1
-    - Get-ChildItem -Path ${CI_PROJECT_DIR}\build\${PLUGIN_NAME}.dll, ${CI_PROJECT_DIR}\build\menu.py | Compress-Archive -DestinationPath ${CI_PROJECT_DIR}\build\${PLUGIN_RELEASE_NAME_WIN64}.zip
+    - Get-ChildItem -Path ${CI_PROJECT_DIR}\build\src\${PLUGIN_NAME}.dll, ${CI_PROJECT_DIR}\build\menu.py | Compress-Archive -DestinationPath ${CI_PROJECT_DIR}\build\${PLUGIN_RELEASE_NAME_WIN64}.zip
   artifacts:
     paths:
       - build/${PLUGIN_RELEASE_NAME_WIN64}.zip
