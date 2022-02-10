@@ -48,14 +48,6 @@ if(NOT OPENIMAGEDENOISE_FOUND)
   endif()
 endif()
 
-add_subdirectory(src)
-
-if(MSVC)
-  add_definitions(-DWIN32)
-  add_definitions(-D_WIN32)
-endif()
-
-
 # Nuke home directory
 if(WIN32 AND NOT CYGWIN)
   get_filename_component(Nuke_HOME_DIR "$ENV{HOMEPATH}/.nuke/" ABSOLUTE)
@@ -68,6 +60,9 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   set(CMAKE_INSTALL_PREFIX "${Nuke_HOME_DIR}/nuke-denoiser" CACHE PATH "Install path prefix" FORCE)
   message("CMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}")
 endif()
+
+# build plugin
+add_subdirectory(src)
 
 # Create init.py for $HOME/.nuke
 if(EXISTS ${Nuke_HOME_DIR}/init.py)
