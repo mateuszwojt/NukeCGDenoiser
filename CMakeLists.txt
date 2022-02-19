@@ -39,14 +39,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 find_package(Nuke REQUIRED)
 
 # OpenImageDenoise
-find_package(OpenImageDenoise)
-if(NOT OpenImageDenoise_FOUND)
-  # set(OpenImageDenoise_INCLUDE_DIR "${OpenImageDenoise_ROOT_DIR}/include")
-  find_library(OpenImageDenoise_LIBRARY NAMES OpenImageDenoise PATHS "${OpenImageDenoise_ROOT_DIR}/lib" NO_DEFAULT_PATH)
-  if(NOT OpenImageDenoise_LIBRARY)
-    message(FATAL_ERROR "Could not find OpenImageDenoise")
-  endif()
-endif()
+find_package(OpenImageDenoise REQUIRED)
 
 # Nuke home directory
 if(WIN32 AND NOT CYGWIN)

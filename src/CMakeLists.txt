@@ -1,7 +1,6 @@
 add_library(denoiser SHARED denoiser.cpp)
 set_target_properties(denoiser PROPERTIES PREFIX "")
-include_directories(${OpenImageDenoise_INCLUDE_DIR} ${Nuke_INCLUDE_DIR})
-target_link_libraries(denoiser ${Nuke_LIBRARIES} ${OpenImageDenoise_LIBRARY})
+target_link_libraries(denoiser ${Nuke_LIBRARIES} ${OpenImageDenoise_LIBRARIES})
 
 install(
   TARGETS
