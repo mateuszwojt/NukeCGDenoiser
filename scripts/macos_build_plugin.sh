@@ -10,7 +10,7 @@ rm -vf /tmp/*
 # build plugin
 cd $CI_PROJECT_DIR
 mkdir build && cd build
-cmake -DOPENIMAGEDENOISE_ROOT_DIR=/opt/oidn-1.4.2.x86_64.macos ..
+cmake -DOpenImageDenoise_ROOT_DIR=/opt/oidn-1.4.2.x86_64.macos ..
 make
 make install
 cd ..

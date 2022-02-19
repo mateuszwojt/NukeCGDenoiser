@@ -19,9 +19,9 @@ build:linux:
   stage: build
   script:
     - chmod +x scripts/linux_install_nuke.sh
-    - chmod +x scripts/build_linux.sh
+    - chmod +x scripts/linux_build_plugin.sh
     - ./scripts/linux_install_nuke.sh
-    - ./scripts/build_linux.sh
+    - ./scripts/linux_build_plugin.sh
     - cd build && tar -cvzf ${PLUGIN_RELEASE_NAME_LINUX}.tar.gz src/${PLUGIN_NAME}.so menu.py && cd ..
   artifacts:
     paths:
@@ -31,9 +31,9 @@ build:linux:
 #   stage: build
 #   script:
 #     - chmod +x scripts/macos_install_nuke.sh
-#     - chmod +x scripts/build_macos.sh
+#     - chmod +x scripts/macos_build_plugin.sh
 #     - ./scripts/macos_install_nuke.sh
-#     - ./scripts/build_macos.sh
+#     - ./scripts/macos_build_plugin.sh
 #     - cd build && tar -cvzf ${PLUGIN_RELEASE_NAME_MACOS}.tar.gz ${PLUGIN_NAME}.dylib menu.py && cd ..
 #   artifacts:
 #     paths:
@@ -43,7 +43,7 @@ build:windows:
   stage: build
   script:
     - .\scripts\windows_install_nuke.ps1
-    - .\scripts\build_windows.ps1
+    - .\scripts\windows_build_plugin.ps1
     - Get-ChildItem -Path ${CI_PROJECT_DIR}\build\src\${PLUGIN_NAME}.dll, ${CI_PROJECT_DIR}\build\menu.py | Compress-Archive -DestinationPath ${CI_PROJECT_DIR}\build\${PLUGIN_RELEASE_NAME_WIN64}.zip
   artifacts:
     paths:
