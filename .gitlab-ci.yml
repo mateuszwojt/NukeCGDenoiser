@@ -44,7 +44,7 @@ build:windows:
   script:
     - .\scripts\windows_install_nuke.ps1
     - .\scripts\windows_build_plugin.ps1
-    - Get-ChildItem -Path ${CI_PROJECT_DIR}\build\src\Release\${PLUGIN_NAME}.dll, ${CI_PROJECT_DIR}\build\menu.py | Compress-Archive -DestinationPath ${CI_PROJECT_DIR}\build\${PLUGIN_RELEASE_NAME_WIN64}.zip
+    - Get-ChildItem -Path ${CI_PROJECT_DIR}\build\src\Release\${PLUGIN_NAME}.dll, ${CI_PROJECT_DIR}\menu.py | Compress-Archive -DestinationPath ${CI_PROJECT_DIR}\build\${PLUGIN_RELEASE_NAME_WIN64}.zip
   artifacts:
     paths:
       - build/${PLUGIN_RELEASE_NAME_WIN64}.zip
