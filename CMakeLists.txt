@@ -39,30 +39,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 find_package(Nuke REQUIRED)
 
 # OpenImageDenoise
-find_package(OpenImageDenoise)
-if(NOT OPENIMAGEDENOISE_FOUND)
-  # use hardocded value for now...
-  if(NOT DEFINED OPENIMAGEDENOISE_ROOT_DIR)
-    set(OPENIMAGEDENOISE_ROOT_DIR "C:/dev/oidn-1.4.2.x64.vc14.windows")
-  endif()
-  set(OPENIMAGEDENOISE_INCLUDE_DIR "${OPENIMAGEDENOISE_ROOT_DIR}/include")
-  find_library(OPENIMAGEDENOISE_LIBRARY NAMES OpenImageDenoise PATHS "${OPENIMAGEDENOISE_ROOT_DIR}/lib" NO_DEFAULT_PATH)
-  if(NOT OPENIMAGEDENOISE_LIBRARY)
-    message(FATAL_ERROR "Could not find OpenImageDenoise")
-  endif()
-endif()
-
-# build plugin
-add_library(denoiser SHARED denoiser.cpp)
-set_target_properties(denoiser PROPERTIES PREFIX "")
-target_include_directories(denoiser PRIVATE ${OPENIMAGEDENOISE_INCLUDE_DIR} ${Nuke_INCLUDE_DIR})
-target_link_libraries(denoiser PUBLIC ${Nuke_LIBRARIES} ${OPENIMAGEDENOISE_LIBRARY})
-
-if(MSVC)
-  add_definitions(-DWIN32)
-  add_definitions(-D_WIN32)
-endif()
-
+find_package(OpenImageDenoise REQUIRED)
 
 # Nuke home directory
 if(WIN32 AND NOT CYGWIN)
@@ -76,6 +53,9 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   set(CMAKE_INSTALL_PREFIX "${Nuke_HOME_DIR}/nuke-denoiser" CACHE PATH "Install path prefix" FORCE)
   message("CMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}")
 endif()
+
+# build plugin
+add_subdirectory(src)
 
 # Create init.py for $HOME/.nuke
 if(EXISTS ${Nuke_HOME_DIR}/init.py)
@@ -100,16 +80,7 @@ else()
   file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/init.py "import nuke\n\nnuke.pluginAddPath('${CMAKE_INSTALL_PREFIX}')\n\n")
 endif()
 
-install(
-  TARGETS
-    denoiser
-  RUNTIME DESTINATION
-    ${CMAKE_INSTALL_PREFIX}
-  LIBRARY DESTINATION
-    ${CMAKE_INSTALL_PREFIX}
-  COMPONENT
-    runtime
-)
+
 install(FILES menu.py DESTINATION ${CMAKE_INSTALL_PREFIX})
 # this is only for CI build to pick up and package menu.py with the plugin release
 install(FILES menu.py DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
