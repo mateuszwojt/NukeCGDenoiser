@@ -10,7 +10,7 @@ rm -vf /tmp/*
 # build plugin
 cd $CI_PROJECT_DIR
 mkdir build && cd build
-cmake -DNUKE_ROOT=/usr/local/Nuke12.2v10 -DOIDN_ROOT=/opt/oidn-1.4.3.x86_64.linux -DCMAKE_VERBOSE_MAKEFILE=ON ..
+cmake -DNuke_ROOT=/usr/local/Nuke12.2v10 -DOIDN_ROOT=/opt/oidn-1.4.3.x86_64.linux -DCMAKE_VERBOSE_MAKEFILE=ON ..
 make
 make install
 cd ..
