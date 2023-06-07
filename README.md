@@ -20,7 +20,7 @@ This plugin should compile fine on both Linux and Windows.
 
 > OIDN is no longer provided as third party library withing this repository. You need to download the binaries or compile it yourself before building this plugin.
 
-Just be sure to specify path to the OpenImageDenoise library using `OPENIMAGEDENOISE_ROOT_DIR` variable.
+Just be sure to specify path to the OpenImageDenoise library using `DOIDN_ROOT` variable.
 
 ### Linux
 
@@ -28,7 +28,7 @@ Just be sure to specify path to the OpenImageDenoise library using `OPENIMAGEDEN
 git clone https://gitlab.com/mateuszwojt/nukecgdenoiser.git
 cd nukecgdenoiser
 mkdir build && cd build
-cmake -DOPENIMAGEDENOISE_ROOT_DIR=/path/to/oidn ..
+cmake -DDOIDN_ROOT=/path/to/oidn ..
 make && make install
 ```
 
@@ -38,7 +38,7 @@ make && make install
 git clone https://gitlab.com/mateuszwojt/nukecgdenoiser.git
 cd nukecgdenoiser
 mkdir build && cd build
-cmake -G "Visual Studio 14 2015 Win64" -DOPENIMAGEDENOISE_ROOT_DIR=/path/to/oidn ..
+cmake -G "Visual Studio 14 2015 Win64" -DDOIDN_ROOT=/path/to/oidn ..
 cmake --build . --config Release
 ```
 
