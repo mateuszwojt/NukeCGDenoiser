@@ -21,6 +21,14 @@ if(NOT CMAKE_BUILD_TYPE)
   endif()
 endif()
 
+# Windows' math include does not define constants by default.
+# Set this definition so it does.
+# Also set NOMINMAX so the min and max functions are not overwritten with macros.
+IF(MSVC)
+    add_definitions(-D_USE_MATH_DEFINES)
+    add_definitions(-DNOMINMAX)
+ENDIF()
+
 # Set install RPATH
 set(CMAKE_INSTALL_RPATH "$ORIGIN/lib")
 # Build with with install RPATH
