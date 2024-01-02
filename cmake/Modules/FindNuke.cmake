@@ -12,26 +12,20 @@
 # Output variables:
 #  NUKE_FOUND
 #  NUKE_EXECUTABLE
-#  NUKE_INCLUDES
-#  NUKE_LIBRARIES
+#  NUKE_INCLUDE_DIRS
 #  NUKE_LIBRARY_DIRS
+#  NUKE_LIBRARIES
 #  NUKE_DDIMAGE_LIBRARY
 #  NUKE_VERSION_MAJOR
 #  NUKE_VERSION_MINOR
 #  NUKE_VERSION_RELEASE
 #
-#
-# Version table (for reference only)
-#    5.0v1 5.0v2
-#    5.1v1 5.1v2 5.1v3 5.1v4 5.1v5 5.1v6
-#    5.2v1 5.2v2 5.2v3
-#    6.0v1 6.0v2 6.0v3 6.0v4 6.0v5 6.0v6 6.0v7
-#    6.1v1 6.1v2 6.1v3 6.1v4 6.1v5
-#    6.2v1 6.2v2 6.2v3 6.2v4 6.2v5 6.2v6
-#    6.3v1 6.3v2 6.3v3 6.3v4 6.3v5 6.3v6 6.3v7 6.3v8 6.3v9
-#    7.0v1 7.0v2 7.0v3 7.0v4)
 
-set(_nuke_KNOWN_VERSIONS 5.0 5.1 5.2 6.0 6.1 6.2 6.3 7.0 8.0 9.0 10.0 10.5 11.0 11.1 11.2)
+if (TARGET Nuke::NDK)
+    return()
+endif()
+
+set(_nuke_KNOWN_VERSIONS 9.0 10.0 10.5 11.0 11.1 11.2 11.3 12.0 12.1 12.2 13.0 13.1 14.0 14.1 15.0)
 set(_nuke_TEST_VERSIONS) # List of Nuke-style strings (e.g. "7.0v4")
 
 
@@ -119,23 +113,20 @@ endif()
 
 # Base search around DDImage, since its name is unversioned
 find_library(NUKE_DDIMAGE_LIBRARY DDImage
-    HINTS ${_nuke_TEST_PATHS}
+    PATHS ${_nuke_TEST_PATHS}
     DOC "Nuke DDImage library path"
-    NO_CMAKE_PATH
-    NO_CMAKE_ENVIRONMENT_PATH
-    NO_CMAKE_SYSTEM_PATH
     NO_SYSTEM_ENVIRONMENT_PATH)
 
 # Sanity-check to avoid a bunch of redundant errors.
 if(NUKE_DDIMAGE_LIBRARY)
     get_filename_component(NUKE_LIBRARY_DIRS ${NUKE_DDIMAGE_LIBRARY} PATH)
 
-    find_path(NUKE_INCLUDE_DIR DDImage/Op.h "${NUKE_LIBRARY_DIRS}/include")
+    find_path(NUKE_INCLUDE_DIRS DDImage/Op.h "${NUKE_LIBRARY_DIRS}/include")
 
     # Pull version information from header
     # (We could pull the DDImage path apart instead, but this avoids dealing
     # with platform-specific naming.)
-    file(STRINGS "${NUKE_INCLUDE_DIR}/DDImage/ddImageVersionNumbers.h" _nuke_DDIMAGE_VERSION_H)
+    file(STRINGS "${NUKE_INCLUDE_DIRS}/DDImage/ddImageVersionNumbers.h" _nuke_DDIMAGE_VERSION_H)
     string(REGEX REPLACE ".*#define kDDImageVersionMajorNum ([0-9]+).*" "\\1"
         NUKE_VERSION_MAJOR ${_nuke_DDIMAGE_VERSION_H})
     string(REGEX REPLACE ".*#define kDDImageVersionMinorNum ([0-9]+).*" "\\1"
@@ -156,9 +147,69 @@ endif()
 # Finalize search
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(Nuke DEFAULT_MSG
-    NUKE_DDIMAGE_LIBRARY NUKE_INCLUDE_DIR NUKE_LIBRARY_DIRS NUKE_EXECUTABLE)
+    NUKE_DDIMAGE_LIBRARY NUKE_INCLUDE_DIRS NUKE_LIBRARY_DIRS NUKE_EXECUTABLE)
 
-if (NUKE_FOUND)
-    set (NUKE_INCLUDES ${NUKE_INCLUDE_DIR})
-    set (NUKE_LIBRARIES ${NUKE_DDIMAGE_LIBRARY})
-endif ()
+
+# The above code makes old-style cmake targets, but Nuke now has its own CMake config and we'd like to be compatible.
+# Make targets which correspond to those in Nuke's own NukeConfig.cmake.
+get_filename_component(NUKE_ROOT ${NUKE_DDIMAGE_LIBRARY} DIRECTORY)
+message(STATUS "Found NDK: ${NUKE_ROOT}")
+
+add_library(Nuke::NDK SHARED IMPORTED)
+
+if (UNIX AND NOT APPLE)
+    set_target_properties(Nuke::NDK
+        PROPERTIES
+            IMPORTED_LOCATION ${NUKE_ROOT}/libDDImage.so
+            INTERFACE_INCLUDE_DIRECTORIES ${NUKE_ROOT}/include
+            INTERFACE_LINK_LIBRARIES ${NUKE_ROOT}/libDDImage.so
+            INTERFACE_COMPILE_FEATURES cxx_std_14
+    )
+elseif (APPLE)
+    set_target_properties(Nuke::NDK
+    PROPERTIES
+        IMPORTED_LOCATION ${NUKE_ROOT}/libDDImage.dylib
+        INTERFACE_INCLUDE_DIRECTORIES ${NUKE_ROOT}/include
+        INTERFACE_LINK_LIBRARIES ${NUKE_ROOT}/libDDImage.dylib
+        INTERFACE_COMPILE_FEATURES cxx_std_14
+    )
+else()
+    set_target_properties(Nuke::NDK
+        PROPERTIES
+            IMPORTED_LOCATION ${NUKE_ROOT}/DDImage.dll
+            IMPORTED_IMPLIB ${NUKE_ROOT}/DDImage.lib
+            INTERFACE_INCLUDE_DIRECTORIES ${NUKE_ROOT}/include
+            INTERFACE_COMPILE_FEATURES cxx_std_14
+    )
+endif()
+
+# Add FDK library for latest versions of Nuke
+if(${NUKE_VERSION_MAJOR} GREATER_EQUAL 14)
+    add_library(Nuke::FDK SHARED IMPORTED)
+
+    if(APPLE)
+        set_target_properties(Nuke::FDK
+            PROPERTIES
+                IMPORTED_LOCATION ${NUKE_ROOT}/libFdkBase.dylib
+                INTERFACE_INCLUDE_DIRECTORIES ${NUKE_ROOT}/include
+                INTERFACE_LINK_LIBRARIES ${NUKE_ROOT}/libFdkBase.dylib
+                INTERFACE_COMPILE_FEATURES cxx_std_14
+        )
+    elseif(UNIX)
+        set_target_properties(Nuke::FDK
+            PROPERTIES
+                IMPORTED_LOCATION ${NUKE_ROOT}/libFdkBase.so
+                INTERFACE_INCLUDE_DIRECTORIES ${NUKE_ROOT}/include
+                INTERFACE_LINK_LIBRARIES ${NUKE_ROOT}/libFdkBase.so
+                INTERFACE_COMPILE_FEATURES cxx_std_14
+        )
+    else()
+        set_target_properties(Nuke::FDK
+            PROPERTIES
+                IMPORTED_LOCATION ${NUKE_ROOT}/FdkBase.dll
+                IMPORTED_IMPLIB ${NUKE_ROOT}/FdkBase.lib
+                INTERFACE_INCLUDE_DIRECTORIES ${NUKE_ROOT}/include
+                INTERFACE_COMPILE_FEATURES cxx_std_14
+        )
+    endif()
+endif()
