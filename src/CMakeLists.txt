@@ -1,15 +1,28 @@
-add_library(denoiser SHARED denoiser.cpp)
-target_include_directories (denoiser PUBLIC ${NUKE_INCLUDES})
-set_target_properties(denoiser PROPERTIES PREFIX "")
-target_link_libraries(denoiser ${NUKE_LIBRARIES} ${OpenImageDenoise_LIBRARIES})
+# Nuke
+find_package(Nuke REQUIRED)
+
+# OpenImageDenoise
+find_package(OpenImageDenoise REQUIRED)
+
+add_library(NukeDenoiser SHARED 
+  denoiser.cpp
+)
+
+target_link_libraries(NukeDenoiser PUBLIC 
+  Nuke::NDK
+  OpenImageDenoise::OpenImageDenoise
+)
+
+set_target_properties(NukeDenoiser PROPERTIES 
+  PREFIX ""
+  INSTALL_RPATH "$ORIGIN/../lib"
+)
 
 install(
   TARGETS
-    denoiser
-  RUNTIME DESTINATION
-    ${CMAKE_INSTALL_PREFIX}
-  LIBRARY DESTINATION
-    ${CMAKE_INSTALL_PREFIX}
+    NukeDenoiser
+  DESTINATION
+    plugins
   COMPONENT
-    runtime
+    Nuke
 )
