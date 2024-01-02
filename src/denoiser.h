@@ -1,4 +1,4 @@
-// Copyright (c) 2021 Mateusz Wojt
+// Copyright (c) 2021-2024 Mateusz Wojt
 
 #include <DDImage/PlanarIop.h>
 #include <DDImage/Interest.h>
@@ -9,7 +9,7 @@
 
 #include <OpenImageDenoise/oidn.hpp>
 
-static const char *const HELP = "CG render denoiser based on Intel OpenImageDenoise library";
+static const char *const HELP = "CG render denoiser based on Intel's Open Image Denoise library";
 static const char *const CLASS = "Denoiser";
 
 using namespace DD::Image;
@@ -27,6 +27,7 @@ public:
 	PackedPreference packedPreference() const { return ePackedPreferenceUnpacked; }
 
 	void knobs(Knob_Callback f);
+	int knob_changed(Knob* k);
 
 	void _validate(bool);
 
@@ -43,9 +44,10 @@ public:
 	const char *Class() const { return d.name; }
 	const char *node_help() const { return HELP; }
 
-	// Intel methods
-	void setupOIDN();
-	void executeOIDN();
+	// OIDN methods
+	void setupDevice();
+	void setupFilter();
+	void executeFilter();
 
 	// private class members
 private:
@@ -54,6 +56,7 @@ private:
 
 	float m_maxMem;
 
+	int m_deviceType;
 	int m_numThreads;
 	int m_numRuns;
 	unsigned int m_width, m_height;
@@ -66,8 +69,8 @@ private:
 	oidn::FilterRef m_filter;
 
 	// buffers
-	std::vector<float> m_beautyPixels;
-	std::vector<float> m_albedoPixels;
-	std::vector<float> m_normalPixels;
-	std::vector<float> m_outputPixels;
+	oidn::BufferRef m_colorBuffer;
+	oidn::BufferRef m_albedoBuffer;
+	oidn::BufferRef m_normalBuffer;
+	oidn::BufferRef m_outputBuffer;
 };
