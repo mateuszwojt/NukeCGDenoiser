@@ -1,9 +1,18 @@
-// Copyright (c) 2021 Mateusz Wojt
+// Copyright (c) 2021-2024 Mateusz Wojt
 
 #include "denoiser.h"
 
 #include <iostream>
 #include <iomanip>
+
+static const char *const _deviceTypeNames[] = {
+	"Auto",
+	"CPU",
+	"SYCL",
+	"CUDA",
+	"HIP",
+	0
+};
 
 DenoiserIop::DenoiserIop(Node *node) : PlanarIop(node)
 {
@@ -11,48 +20,60 @@ DenoiserIop::DenoiserIop(Node *node) : PlanarIop(node)
 	m_bHDR = true;
 	m_bAffinity = false;
 	m_numRuns = 1;
+	m_deviceType = 0; // Auto
 	m_numThreads = 0;
 	m_maxMem = 0.f;
-	m_width = m_height = 0;
 
 	m_device = nullptr;
 	m_filter = nullptr;
 
+	m_colorBuffer = nullptr;
+	m_albedoBuffer = nullptr;
+	m_normalBuffer = nullptr;
+	m_outputBuffer = nullptr;
+
 	m_defaultChannels = Mask_RGB;
 	m_defaultNumberOfChannels = m_defaultChannels.size();
+
+	setupDevice();
 };
 
-void DenoiserIop::setupOIDN()
+void DenoiserIop::setupDevice()
 {
 	try
-	{
+    {
 		// create device
-		m_device = oidn::newDevice();
+		m_device = oidnNewDevice(static_cast<OIDNDeviceType>(m_deviceType));
 		const char *errorMessage;
 		if (m_device.getError(errorMessage) != oidn::Error::None)
 			throw std::runtime_error(errorMessage);
 
-		// set device parameters
+        // set device parameters
 		m_device.set("numThreads", m_numThreads);
 		m_device.set("setAffinity", m_bAffinity);
 
 		// commit changes to the device
 		m_device.commit();
 
-		// initialize filter
+		// This can be an expensive operation, so we initialize the filter here
 		m_filter = m_device.newFilter("RT");
+    }
+    catch (const std::exception &e)
+    {
+        std::string message = e.what();
+		error("[OIDN]: %s", message.c_str());
+    }
+}
 
+void DenoiserIop::setupFilter()
+{
+	try
+	{
 		// set the images
-		m_filter.setImage("color", m_beautyPixels.data(), oidn::Format::Float3, m_width, m_height);
-		m_filter.setImage("output", m_outputPixels.data(), oidn::Format::Float3, m_width, m_height);
-
-		if (!m_albedoPixels.empty()) {
-			m_filter.setImage("albedo", m_albedoPixels.data(), oidn::Format::Float3, m_width, m_height);
-		}
-
-		if (!m_normalPixels.empty()) {
-			m_filter.setImage("normal", m_normalPixels.data(), oidn::Format::Float3, m_width, m_height);
-		}
+		m_filter.setImage("color", m_colorBuffer, oidn::Format::Float3, m_width, m_height);
+		m_filter.setImage("output", m_outputBuffer, oidn::Format::Float3, m_width, m_height);
+		m_filter.setImage("albedo", m_albedoBuffer, oidn::Format::Float3, m_width, m_height);
+		m_filter.setImage("normal", m_normalBuffer, oidn::Format::Float3, m_width, m_height);
 
 		// set filter parameters
 		m_filter.set("hdr", m_bHDR);
@@ -60,6 +81,23 @@ void DenoiserIop::setupOIDN()
 
 		// commit changes to the filter
 		m_filter.commit();
+    }
+    catch (const std::exception &e)
+    {
+        std::string message = e.what();
+		error("[OIDN]: %s", message.c_str());
+    }
+
+}
+
+void DenoiserIop::executeFilter()
+{
+	try
+	{
+		for (unsigned int i = 0; i < m_numRuns; i++)
+		{
+			m_filter.execute();
+		}
 	}
 	catch (const std::exception &e)
 	{
@@ -68,38 +106,40 @@ void DenoiserIop::setupOIDN()
 	}
 }
 
-void DenoiserIop::executeOIDN()
-{
-	try
-	{
-		int sum = 0;
-		for (unsigned int i = 0; i < m_numRuns; i++)
-		{
-			clock_t start = clock(), diff;
-			m_filter.execute();
-			diff = clock() - start;
-			int msec = diff * 1000 / CLOCKS_PER_SEC;
-			sum += msec;
-		}
-		if (m_numRuns > 1)
-		{
-			sum /= m_numRuns;
-		}
-	}
-	catch (const std::runtime_error &e)
-	{
-		std::string message = e.what();
-		error("[OIDN]: %s", message.c_str());
-	}
-}
-
 void DenoiserIop::knobs(Knob_Callback f)
 {
-	Bool_knob(f, &m_bHDR, "hdr");
+	Enumeration_knob(f, &m_deviceType, _deviceTypeNames, "device", "Device Type");
+	Tooltip(f,
+			"Auto: device is selected automatically\n"
+			"CPU: regular CPU denoising backend\n"
+			"SYCL: \n"
+			"CUDA: CUDA-based denoising backend\n"
+			"HIP: ");
+	
+	Bool_knob(f, &m_bHDR, "hdr", "HDR");
+	Tooltip(f, "Turn on if input image is high-dynamic range");
 	SetFlags(f, Knob::STARTLINE);
-	Bool_knob(f, &m_bAffinity, "affinity");
-	Float_knob(f, &m_maxMem, "maxmem");
-	Int_knob(f, &m_numRuns, "num_runs");
+
+	Bool_knob(f, &m_bAffinity, "affinity", "Enable thread affinity");
+	Tooltip(f, "Enables thread affinitization (pinning software threads to hardware threads)\n"
+	 		   "if it is necessary for achieving optimal performance");
+	
+	Float_knob(f, &m_maxMem, "maxmem", "Memory limit (MB)");
+	Tooltip(f, "Limit the memory usage below the specified amount in megabytes.\n"
+			   "0 = no memory limit.");
+	
+	Int_knob(f, &m_numRuns, "num_runs", "Number of runs");
+	Tooltip(f, "Number of times the image will be fed into the denoise filter.");
+}
+
+int DenoiserIop::knob_changed(Knob* k)
+{
+	if (k->is("device"))
+	{
+		setupDevice();
+		return 1;
+	}
+	return 0;
 }
 
 const char *DenoiserIop::input_label(int n, char *) const
@@ -137,12 +177,28 @@ void DenoiserIop::renderStripe(ImagePlane &plane)
 	const Box imageFormat = info().format();
 	m_width = imageFormat.w();
 	m_height = imageFormat.h();
-	auto inputPlaneSize = m_width * m_height * m_defaultNumberOfChannels;
-	m_outputPixels.resize(inputPlaneSize);
+	auto bufferSize = m_width * m_height * m_defaultNumberOfChannels * sizeof(float);
 
-	// Clear vectors so it does not leave any residual pixels when disconnecting inputs
-	m_albedoPixels.clear();
-	m_normalPixels.clear();
+	{
+		// Allocate memory for each buffer
+		m_colorBuffer = m_device.newBuffer(bufferSize);
+		m_albedoBuffer = m_device.newBuffer(bufferSize);
+		m_normalBuffer = m_device.newBuffer(bufferSize);
+		m_outputBuffer = m_device.newBuffer(bufferSize);
+		setupFilter();
+	}
+	
+	// Acquire pointers to the float data of each buffer
+	float* colorPtr = static_cast<float*>(m_colorBuffer.getData());
+	float* albedoPtr = static_cast<float*>(m_albedoBuffer.getData());
+	float* normalPtr = static_cast<float*>(m_normalBuffer.getData());
+	float* outputPtr = static_cast<float*>(m_outputBuffer.getData());
+
+	if (!colorPtr || !albedoPtr || !normalPtr) {
+    	// Handle error: Buffer allocation failed or pointers are null
+		error("Buffer data is nullptr");
+    	return;
+	}
 
 	for (auto i = 0; i < node_inputs(); ++i) {
 		if (aborted() || cancelled())
@@ -178,30 +234,24 @@ void DenoiserIop::renderStripe(ImagePlane &plane)
 		inputIop->fetchPlane(inputPlane);
 
 		auto chanStride = inputPlane.chanStride();
-		auto numPixels = inputPlane.bounds().area();
-
-		// Allocate memory for each vector of pixels.
-		if (i == 0)
-			m_beautyPixels.resize(numPixels * m_defaultNumberOfChannels);
-		if (i == 1)
-			m_albedoPixels.resize(numPixels * m_defaultNumberOfChannels);
-		if (i == 2)
-			m_normalPixels.resize(numPixels * m_defaultNumberOfChannels);
 
 		// Iterate over each channel and get pixel values.
-		for (auto chanNo = 0; chanNo < m_defaultNumberOfChannels; chanNo++)
-		{
-			const float* indata = &inputPlane.readable()[chanStride * chanNo];
+		for (auto y = 0; y < ft; y++) {
+			for (auto x = 0; x < fr; x++) {
+				for (auto chanNo = 0; chanNo < m_defaultNumberOfChannels; chanNo++) {
+					const float* indata = &inputPlane.readable()[chanStride * chanNo];
+					size_t index = (y * fr + x) * m_defaultNumberOfChannels + chanNo;
 
-			for (auto x = 0; x < fr; x++)
-			{
-				for (auto y = 0; y < ft; y++) {
-					if (i == 0)
-						m_beautyPixels[(y * fr + x) * m_defaultNumberOfChannels + chanNo] = indata[y * fr + x];
-					if (i == 1)
-						m_albedoPixels[(y * fr + x) * m_defaultNumberOfChannels + chanNo] = indata[y * fr + x];
-					if (i == 2)
-						m_normalPixels[(y * fr + x) * m_defaultNumberOfChannels + chanNo] = indata[y * fr + x];
+					// Write to the appropriate buffer based on the channel number
+					if (i == 0) {
+						colorPtr[index] = indata[y * fr + x];
+					}
+					if (i == 1) {
+						albedoPtr[index] = indata[y * fr + x];
+					}
+					if (i == 2) {
+						normalPtr[index] = indata[y * fr + x];
+					}
 				}
 			}
 		}
@@ -210,9 +260,9 @@ void DenoiserIop::renderStripe(ImagePlane &plane)
 	{
 		if (aborted() || cancelled())
 			return;
-		// OIDN
-		setupOIDN();
-		executeOIDN();
+		
+		// Execute denoise filter
+		executeFilter();
 	}
 
 	// Copy final output into the image plane.
@@ -220,10 +270,10 @@ void DenoiserIop::renderStripe(ImagePlane &plane)
 	{
 		float* outdata = &plane.writable()[plane.chanStride() * chanNo];
 
-		for (auto i = 0; i < m_width; i++)
-		{
-			for (auto j = 0; j < m_height; ++j) {
-				outdata[j * m_width + i] = m_outputPixels[(j * m_width + i) * m_defaultNumberOfChannels + chanNo];
+		for (auto i = 0; i < m_width; i++) {
+			for (auto j = 0; j < m_height; j++) {
+				size_t index = (j * m_width + i) * m_defaultNumberOfChannels + chanNo;
+				outdata[j * m_width + i] = outputPtr[index];
 			}
 		}
 	}

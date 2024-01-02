@@ -2,7 +2,7 @@
 
 ![](images/denoiser_node_usage.png)
 
-This is a Nuke plugin for denoising CG renders using Intel's OpenImageDenoise library.
+This is a Nuke plugin for denoising CG renders using Intel's Open Image Denoise library.
 
 [Documentation](https://mateuszwojt.gitlab.io/nukecgdenoiser)
 
@@ -10,15 +10,15 @@ This is a Nuke plugin for denoising CG renders using Intel's OpenImageDenoise li
 
 In order to compile this plugin, you're gonna need:
 
-- CMake 3.9 or later
-- Nuke (tested on 12.2v5, can't say if it works with 13.x yet)
-- [Intel's OpenImageDenoise](https://github.com/OpenImageDenoise/oidn)
+- CMake 3.13 or later
+- Nuke 12.x/13.x/14.x/15.x
+- [Intel's OpenImageDenoise 2.x](https://github.com/OpenImageDenoise/oidn)
 
-This plugin should compile fine on both Linux and Windows.
+This plugin should compile fine on Windows, Linux and MacOS. This plugin was tested on Nuke 15.0v2 / MacOS Ventura 13.6.1 (arm64) with Open Image Denoise v2.1.0.
 
 ## Building
 
-> OIDN is no longer provided as third party library withing this repository. You need to download the binaries or compile it yourself before building this plugin.
+> OIDN is no longer provided as third party library withing this repository. You need to compile it yourself or download the pre-built binaries from [here](https://github.com/OpenImageDenoise/oidn/releases) before building this plugin.
 
 Just be sure to specify path to the OpenImageDenoise library using `DOIDN_ROOT` variable.
 
@@ -46,15 +46,10 @@ cmake --build . --config Release
 
 If for some reason plugin cannot be loaded inside Nuke, make sure that you have the path to OpenImageDenoise library appened to your system's `PATH` variable.
 
+If the plugin is crashing Nuke, please create a new issue [here on GitLab](https://gitlab.com/mateuszwojt/nukecgdenoiser/-/issues) with the description containing steps to reproduce the crash.
+
 ## Limitations
 
-Currently there's no internal validation of the incoming AOV resolution. If your passes are different size, it can introduce artifacts into the denoised image. Make sure to reformat such AOVs, so all passes are at the same image resolution.
+Currently there's no internal validation of the input AOVs resolution. If your passes are different width and height for some reason, it can introduce artifacts into the denoised image. Make sure to reformat such AOVs, so all passes are at the same image resolution.
 
 This plugin works on a limited number of channels at the moment. Only RGB components are processed, alpha is ignored.
-
-## Contributions
-
-I'd like to say "big thanks" to:
-- Marta Nowak, for help in figuring out the contiguos pixel packing
-- Hendrik Proosa, for looking through the code and suggesting some great improvements in image buffer access
-- Christophe Moreau, for pointing out that the old version was broken ;)

@@ -1,13 +1,10 @@
-cmake_minimum_required(VERSION 3.9)
-
-cmake_policy(SET CMP0048 NEW)
-cmake_policy(SET CMP0068 NEW)
+cmake_minimum_required(VERSION 3.13)
 
 project(NukeCGDenoiser)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if(NOT CMAKE_BUILD_TYPE)
@@ -20,6 +17,14 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_C_FLAGS} -O3 -DNDEBUG -Wall")
   endif()
 endif()
+
+# Windows' math include does not define constants by default.
+# Set this definition so it does.
+# Also set NOMINMAX so the min and max functions are not overwritten with macros.
+IF(MSVC)
+    add_definitions(-D_USE_MATH_DEFINES)
+    add_definitions(-DNOMINMAX)
+ENDIF()
 
 # Set install RPATH
 set(CMAKE_INSTALL_RPATH "$ORIGIN/lib")
@@ -35,11 +40,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 # /fPIC
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-# Nuke
-find_package(Nuke REQUIRED)
-
-# OpenImageDenoise
-find_package(OpenImageDenoise REQUIRED)
+# Plugin source code
+add_subdirectory(src)
 
 # Nuke home directory
 if(WIN32 AND NOT CYGWIN)
@@ -53,9 +55,6 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   set(CMAKE_INSTALL_PREFIX "${Nuke_HOME_DIR}/nuke-denoiser" CACHE PATH "Install path prefix" FORCE)
   message("CMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}")
 endif()
-
-# build plugin
-add_subdirectory(src)
 
 # Create init.py for $HOME/.nuke
 if(EXISTS ${Nuke_HOME_DIR}/init.py)
@@ -81,7 +80,7 @@ else()
 endif()
 
 
-install(FILES menu.py DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(FILES scripts/menu.py DESTINATION ${CMAKE_INSTALL_PREFIX})
 # this is only for CI build to pick up and package menu.py with the plugin release
-install(FILES menu.py DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+install(FILES scripts/menu.py DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/init.py DESTINATION ${Nuke_HOME_DIR})
