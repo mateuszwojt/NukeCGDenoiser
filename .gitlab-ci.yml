@@ -17,11 +17,22 @@ build:linux:
 
 build:macos:
   stage: build
-  before_script:
-    - brew install open-image-denoise
   script:
+    - brew install open-image-denoise
     - cd $CI_PROJECT_DIR
     - mkdir build && cd build
     - cmake -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_BUILD_TYPE=Release ..
     - make
     - tar -cvzf ${PLUGIN_RELEASE_NAME_LINUX}-${NUKE_VERSION}.tar.gz src/${PLUGIN_NAME}.so menu.py && cd ..
+
+build:windows:
+  stage: build
+  script:
+    - Invoke-WebRequest -Uri "https://github.com/OpenImageDenoise/oidn/releases/download/v2.1.0/oidn-2.1.0.x64.windows.zip" -OutFile "C:\oidn-2.1.0.x64.windows.zip"
+    - Expand-Archive "C:\oidn-2.1.0.x64.windows.zip" -DestinationPath "C:\" -Verbose
+    - cd $CI_PROJECT_DIR
+    - mkdir build
+    - cd build
+    - cmake -G "Visual Studio 16 2019" -DOIDN_ROOT="C:\oidn-2.1.0.x64.windows" -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_BUILD_TYPE=Release ..
+    - cmake --build . --config Release
+    - cd ..
