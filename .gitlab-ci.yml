@@ -1,99 +1,27 @@
-include: 'https://gitlab.com/mateuszwojt/ci-templates/raw/main/.build-template.yml'
-
-stages:
-  - build
-  - upload
-  - release
-  - deploy
-
-variables:
-  PACKAGE_VERSION: "1.0.0"
-  PLUGIN_NAME: "denoiser"
-  PLUGIN_RELEASE_NAME: "${PLUGIN_NAME}-${PACKAGE_VERSION}"
-  PLUGIN_RELEASE_NAME_LINUX: "${PLUGIN_RELEASE_NAME}.linux"
-  PLUGIN_RELEASE_NAME_MACOS: "${PLUGIN_RELEASE_NAME}.macos"
-  PLUGIN_RELEASE_NAME_WIN64: "${PLUGIN_RELEASE_NAME}.win64"
-  PACKAGE_REGISTRY_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/NukeCGDenoiser/${PACKAGE_VERSION}"
+include: 'https://gitlab.com/mateuszwojt/ci-templates/raw/main/.build-and-release-nuke-plugin.yml'
 
 build:linux:
   stage: build
-  script:
-    - chmod +x scripts/linux_install_nuke.sh
-    - chmod +x scripts/linux_build_plugin.sh
-    - ./scripts/linux_install_nuke.sh
-    - ./scripts/linux_build_plugin.sh
-    - cd build && tar -cvzf ${PLUGIN_RELEASE_NAME_LINUX}.tar.gz src/${PLUGIN_NAME}.so menu.py && cd ..
-  artifacts:
-    paths:
-      - build/${PLUGIN_RELEASE_NAME_LINUX}.tar.gz
-
-# build:macos:
-#   stage: build
-#   script:
-#     - chmod +x scripts/macos_install_nuke.sh
-#     - chmod +x scripts/macos_build_plugin.sh
-#     - ./scripts/macos_install_nuke.sh
-#     - ./scripts/macos_build_plugin.sh
-#     - cd build && tar -cvzf ${PLUGIN_RELEASE_NAME_MACOS}.tar.gz ${PLUGIN_NAME}.dylib menu.py && cd ..
-#   artifacts:
-#     paths:
-#       - build/${PLUGIN_RELEASE_NAME_MACOS}.tar.gz
-
-build:windows:
-  stage: build
-  script:
-    - .\scripts\windows_install_nuke.ps1
-    - .\scripts\windows_build_plugin.ps1
-    - Get-ChildItem -Path ${CI_PROJECT_DIR}\build\src\Release\${PLUGIN_NAME}.dll, ${CI_PROJECT_DIR}\menu.py | Compress-Archive -DestinationPath ${CI_PROJECT_DIR}\build\${PLUGIN_RELEASE_NAME_WIN64}.zip
-  artifacts:
-    paths:
-      - build/${PLUGIN_RELEASE_NAME_WIN64}.zip
-
-upload:
-  stage: upload
-  image: curlimages/curl:latest
-  rules:
-    - if: $CI_COMMIT_TAG
-  script:
-    - |
-      curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file build/${PLUGIN_RELEASE_NAME_LINUX}.tar.gz "${PACKAGE_REGISTRY_URL}/${PLUGIN_RELEASE_NAME_LINUX}.tar.gz"
-    # - |
-    #   curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file build/${PLUGIN_RELEASE_NAME_MACOS}.tar.gz "${PACKAGE_REGISTRY_URL}/${PLUGIN_RELEASE_NAME_MACOS}.tar.gz"
-    - |
-      curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file build/${PLUGIN_RELEASE_NAME_WIN64}.zip "${PACKAGE_REGISTRY_URL}/${PLUGIN_RELEASE_NAME_WIN64}.zip"
-
-release:
-  stage: release
-  image: registry.gitlab.com/gitlab-org/release-cli:latest
-  rules:
-    - if: $CI_COMMIT_TAG
-  script:
-    - |
-      release-cli create --name "Release $CI_COMMIT_TAG" --tag-name $CI_COMMIT_TAG \
-        --assets-link "{\"name\":\"${PLUGIN_RELEASE_NAME_LINUX}.tar.gz\",\"url\":\"${PACKAGE_REGISTRY_URL}/${PLUGIN_RELEASE_NAME_LINUX}.tar.gz\"}" \
-        --assets-link "{\"name\":\"${PLUGIN_RELEASE_NAME_WIN64}.zip\",\"url\":\"${PACKAGE_REGISTRY_URL}/${PLUGIN_RELEASE_NAME_WIN64}.zip\"}" \
-
-pages:
-  stage: deploy
-  image: python:3.7-alpine
-  script:
-    - pip install -U sphinx
-    - sphinx-build -b html . public
-  artifacts:
-    paths:
-    - public
-  only:
-  - master
-
-make-badge:
-  stage: deploy
-  image: ruby:2.5
-  rules:
-    - if: $CI_COMMIT_TAG
   before_script:
-    - apt-get update -y
-    - apt-get install -y jq curl
+    - cd /tmp
+    - wget -q -P /tmp/ https://github.com/OpenImageDenoise/oidn/releases/download/v2.1.0/oidn-2.1.0.x86_64.linux.tar.gz
+    - mkdir -p /opt
+    - tar -C /opt -xvzf /tmp/oidn-2.1.0.x86_64.linux.tar.gz
+    - rm -rf /tmp/oidn-2.1.0.x86_64.linux.tar.gz
   script:
-    - version=$(cat VERSION.txt)
-    - version_badge_id=$(curl --header "PRIVATE-TOKEN:${API_TOKEN}" https://gitlab.com/api/v4/projects/${CI_PROJECT_ID}/badges | jq -c 'map(select(.name | contains("version")))[0].id')
-    - curl --request PUT --header "PRIVATE-TOKEN:${API_TOKEN}" --data "image_url=https://img.shields.io/badge/version-${version}-blue" https://gitlab.com/api/v4/projects/${CI_PROJECT_ID}/badges/${version_badge_id}
+    - cd $CI_PROJECT_DIR
+    - mkdir build && cd build
+    - cmake -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_BUILD_TYPE=Release -DOIDN_ROOT=/opt/oidn-2.1.0.x86_64.linux ..
+    - make
+    - tar -cvzf ${PLUGIN_RELEASE_NAME_LINUX}-${NUKE_VERSION}.tar.gz src/${PLUGIN_NAME}.so menu.py && cd ..
+
+build:macos:
+  stage: build
+  before_script:
+    - brew install open-image-denoise
+  script:
+    - cd $CI_PROJECT_DIR
+    - mkdir build && cd build
+    - cmake -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_BUILD_TYPE=Release ..
+    - make
+    - tar -cvzf ${PLUGIN_RELEASE_NAME_LINUX}-${NUKE_VERSION}.tar.gz src/${PLUGIN_NAME}.so menu.py && cd ..
