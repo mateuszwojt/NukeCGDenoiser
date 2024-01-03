@@ -31,7 +31,7 @@ build:windows:
     - Invoke-WebRequest -Uri "https://thefoundry.s3.amazonaws.com/products/nuke/releases/15.0v2/Nuke15.0v2-win-x86_64.zip" -OutFile "C:\Nuke15.0v2-win-x86_64.zip"
     - Expand-Archive "C:\Nuke15.0v2-win-x86_64.zip" -DestinationPath "C:\Nuke15.0v2-win-x86_64"
     - cd "C:\Nuke15.0v2-win-x86_64"
-    - .\Nuke15.0v2-win-x86_64.exe /S /ACCEPT-FOUNDRY-EULA
+    - .\Nuke15.0v2-win-x86_64.msi /S /ACCEPT-FOUNDRY-EULA
     - Invoke-WebRequest -Uri "https://github.com/OpenImageDenoise/oidn/releases/download/v2.1.0/oidn-2.1.0.x64.windows.zip" -OutFile "C:\oidn-2.1.0.x64.windows.zip"
     - Expand-Archive "C:\oidn-2.1.0.x64.windows.zip" -DestinationPath "C:\" -Verbose
     - cd $CI_PROJECT_DIR
