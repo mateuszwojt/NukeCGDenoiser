@@ -2,13 +2,12 @@ include: 'https://gitlab.com/mateuszwojt/ci-templates/raw/main/.build-and-releas
 
 build:linux:
   stage: build
-  before_script:
+  script:
     - cd /tmp
     - wget -q -P /tmp/ https://github.com/OpenImageDenoise/oidn/releases/download/v2.1.0/oidn-2.1.0.x86_64.linux.tar.gz
     - mkdir -p /opt
     - tar -C /opt -xvzf /tmp/oidn-2.1.0.x86_64.linux.tar.gz
     - rm -rf /tmp/oidn-2.1.0.x86_64.linux.tar.gz
-  script:
     - cd $CI_PROJECT_DIR
     - mkdir build && cd build
     - cmake -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_BUILD_TYPE=Release -DOIDN_ROOT=/opt/oidn-2.1.0.x86_64.linux ..
