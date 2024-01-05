@@ -20,7 +20,7 @@ This plugin should compile fine on Windows, Linux and MacOS. This plugin was tes
 
 > OIDN is no longer provided as third party library withing this repository. You need to compile it yourself or download the pre-built binaries from [here](https://github.com/OpenImageDenoise/oidn/releases) before building this plugin.
 
-Just be sure to specify path to the OpenImageDenoise library using `DOIDN_ROOT` variable.
+Just be sure to specify path to the OpenImageDenoise library using `OIDN_ROOT` variable.
 
 ### Linux
 
@@ -28,17 +28,19 @@ Just be sure to specify path to the OpenImageDenoise library using `DOIDN_ROOT` 
 git clone https://gitlab.com/mateuszwojt/nukecgdenoiser.git
 cd nukecgdenoiser
 mkdir build && cd build
-cmake -DDOIDN_ROOT=/path/to/oidn ..
+cmake -DOIDN_ROOT=/path/to/oidn ..
 make && make install
 ```
 
 ### Windows
 
+Compiling this plugin on Windows for Nuke 14/15 requires Visual Studio 2019.
+
 ```
 git clone https://gitlab.com/mateuszwojt/nukecgdenoiser.git
 cd nukecgdenoiser
 mkdir build && cd build
-cmake -G "Visual Studio 14 2015 Win64" -DDOIDN_ROOT=/path/to/oidn ..
+cmake -G "Visual Studio 16 2019 Win64" -DOIDN_ROOT=/path/to/oidn ..
 cmake --build . --config Release
 ```
 
