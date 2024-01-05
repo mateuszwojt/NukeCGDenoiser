@@ -1,5 +1,8 @@
 include: 'https://gitlab.com/mateuszwojt/ci-templates/raw/main/.build-and-release-nuke-plugin.yml'
 
+variables:
+  PLUGIN_NAME: "NukeCGDenoiser"
+
 build:linux:
   stage: build
   script:
@@ -36,6 +39,7 @@ build:windows:
     - cd $CI_PROJECT_DIR
     - mkdir build
     - cd build
-    - cmake -G "Visual Studio 16 2019" -DOIDN_ROOT="C:\oidn-2.1.0.x64.windows" -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_BUILD_TYPE=Release ..
+    - cmake -G "Visual Studio 16 2019" -DOIDN_ROOT="C:\oidn-2.1.0.x64.windows" -DNuke_ROOT="C:\Program Files\Nuke15.0v2"-DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_BUILD_TYPE=Release ..
     - cmake --build . --config Release
     - cd ..
+    - Get-ChildItem -Path ${CI_PROJECT_DIR}\build\src\Release\${PLUGIN_NAME}.dll, ${CI_PROJECT_DIR}\menu.py | Compress-Archive -DestinationPath ${CI_PROJECT_DIR}\build\${PLUGIN_RELEASE_NAME_WIN64}.zip

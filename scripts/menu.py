@@ -11,4 +11,4 @@ nuke.pluginAddPath(plugin_path + os.path.sep + 'plugins')
 nuke.menu('Nodes').addMenu('MW')
 nuke.menu('Nodes').addCommand('MW/Denoiser', lambda: nuke.createNode('Denoiser'))
 
-nuke.load('NukeDenoiser')
+nuke.load('NukeCGDenoiser')

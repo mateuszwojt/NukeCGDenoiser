@@ -4,23 +4,23 @@ find_package(Nuke REQUIRED)
 # OpenImageDenoise
 find_package(OpenImageDenoise REQUIRED)
 
-add_library(NukeDenoiser SHARED 
+add_library(NukeCGDenoiser SHARED 
   denoiser.cpp
 )
 
-target_link_libraries(NukeDenoiser PUBLIC 
+target_link_libraries(NukeCGDenoiser PUBLIC 
   Nuke::NDK
   OpenImageDenoise::OpenImageDenoise
 )
 
-set_target_properties(NukeDenoiser PROPERTIES 
+set_target_properties(NukeCGDenoiser PROPERTIES 
   PREFIX ""
   INSTALL_RPATH "$ORIGIN/../lib"
 )
 
 install(
   TARGETS
-    NukeDenoiser
+    NukeCGDenoiser
   DESTINATION
     plugins
   COMPONENT
