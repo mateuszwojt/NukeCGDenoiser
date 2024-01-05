@@ -15,7 +15,7 @@ build:linux:
     - mkdir build && cd build
     - cmake -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_BUILD_TYPE=Release -DOIDN_ROOT=/opt/oidn-2.1.0.x86_64.linux ..
     - make
-    - tar -cvzf ${PLUGIN_RELEASE_NAME_LINUX}-${NUKE_VERSION}.tar.gz src/${PLUGIN_NAME}.so ${CI_PROJECT_DIR}/scripts/menu.py && cd ..
+    - tar -cvzf ${PLUGIN_RELEASE_NAME_LINUX}-${NUKE_VERSION}.tar.gz -C `dirname src/${PLUGIN_NAME}.so` `basename src/${PLUGIN_NAME}.so` -C `dirname ${CI_PROJECT_DIR}/scripts/menu.py` `basename ${CI_PROJECT_DIR}/scripts/menu.py` && cd ..
 
 build:macos:
   stage: build
@@ -25,7 +25,7 @@ build:macos:
     - mkdir build && cd build
     - cmake -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_BUILD_TYPE=Release ..
     - make
-    - tar -cvzf ${PLUGIN_RELEASE_NAME_LINUX}-${NUKE_VERSION}.tar.gz src/${PLUGIN_NAME}.so ${CI_PROJECT_DIR}/scripts/menu.py && cd ..
+    - tar -cvzf ${PLUGIN_RELEASE_NAME_LINUX}-${NUKE_VERSION}.tar.gz -C `dirname src/${PLUGIN_NAME}.so` `basename src/${PLUGIN_NAME}.so` -C `dirname ${CI_PROJECT_DIR}/scripts/menu.py` `basename ${CI_PROJECT_DIR}/scripts/menu.py` && cd ..
 
 build:windows:
   stage: build
