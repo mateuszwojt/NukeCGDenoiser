@@ -1,6 +1,8 @@
 name: Build plugins
 on:
   push:
+    tags:
+      - '*'
 
 env:
   image: ghcr.io/gillesvink/nukedockerbuild
