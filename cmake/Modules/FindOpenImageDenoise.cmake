@@ -1,6 +1,6 @@
 if(NOT DEFINED OIDN_ROOT)
   if(WIN32)
-    set(OIDN_ROOT "C:/oidn")
+    set(OIDN_ROOT "C:/oidn-2.1.0.x64.windows")
   elseif(APPLE)
     set(OIDN_ROOT "/opt/homebrew/Cellar/open-image-denoise")
     file(GLOB OIDN_VERSIONED_DIRS "${OIDN_ROOT}/*")
@@ -8,7 +8,7 @@ if(NOT DEFINED OIDN_ROOT)
       list(GET OIDN_VERSIONED_DIRS 0 OIDN_ROOT) # Take the first match
     endif()
   else()
-    set(OIDN_ROOT "/usr/local/lib64")
+    set(OIDN_ROOT "/opt/oidn-2.1.0.x86_64.linux")
   endif()
 endif()
 

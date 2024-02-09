@@ -14,7 +14,7 @@ In order to compile this plugin, you're gonna need:
 - Nuke 12.x/13.x/14.x/15.x
 - [Intel's OpenImageDenoise 2.x](https://github.com/OpenImageDenoise/oidn)
 
-This plugin should compile fine on Windows, Linux and MacOS. This plugin was tested on Nuke 15.0v2 / MacOS Ventura 13.6.1 (arm64) with Open Image Denoise v2.1.0.
+This plugin should compile fine on Windows, Linux and MacOS. It was tested with Nuke 15.0v2 / MacOS Ventura 13.6.1 (arm64) with Open Image Denoise v2.1.0.
 
 ## Building
 

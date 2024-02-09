@@ -1,0 +1,23 @@
+{
+  "build": {
+    "dockerfile": "Dockerfile",
+    "args": {
+      "NUKE_VERSION": "15.0"  // Nuke MacOS ARM only exists for 15+
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "streetsidesoftware.code-spell-checker",
+        "twxs.cmake",
+        "ms-vscode.cmake-tools",
+        "ms-vscode.cpptools",
+        "ms-vscode.cpptools-extension-pack",
+        "ms-vscode.cpptools-themes"
+      ]
+    }
+  },
+  "forwardPorts": [
+    3000
+  ]
+}
