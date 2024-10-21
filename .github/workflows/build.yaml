@@ -13,7 +13,7 @@ jobs:
 
     strategy:
       matrix:
-        nuke_version: ["13.0", "13.1", "13.2", "14.0", "14.1", "15.0"]
+        nuke_version: ["14.1", "15.0"]
       fail-fast: true
 
     steps:
@@ -41,7 +41,7 @@ jobs:
 
     strategy:
       matrix:
-        nuke_version: ["13.0", "13.1", "13.2", "14.0", "14.1", "15.0"]
+        nuke_version: ["14.1", "15.0"]
       fail-fast: true
 
     steps:
@@ -96,7 +96,7 @@ jobs:
 
     strategy:
       matrix:
-        nuke_version: ["13.0", "13.1", "13.2", "14.0", "14.1", "15.0"]
+        nuke_version: ["14.1", "15.0"]
       fail-fast: true
 
     steps:
