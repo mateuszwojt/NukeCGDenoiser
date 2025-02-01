@@ -6,6 +6,7 @@ on:
 
 env:
   image: ghcr.io/gillesvink/nukedockerbuild
+  OIDN_VERSION: "2.1.0"
 
 jobs:
   build-linux:
@@ -19,10 +20,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download OpenImageDenoise
+      - name: Download and Install OpenImageDenoise
         run: |
-          wget https://github.com/OpenImageDenoise/oidn/releases/download/v2.1.0/oidn-2.1.0.x86_64.linux.tar.gz
-          tar -xzvf oidn-2.1.0.x86_64.linux.tar.gz -C /opt/
+          wget https://github.com/OpenImageDenoise/oidn/releases/download/v${{ env.OIDN_VERSION }}/oidn-${{ env.OIDN_VERSION }}.x86_64.linux.tar.gz
+          sudo mkdir -p /opt
+          sudo tar -xzf oidn-${{ env.OIDN_VERSION }}.x86_64.linux.tar.gz -C /opt/
+          echo "/opt/oidn-${{ env.OIDN_VERSION }}.x86_64.linux/lib" | sudo tee /etc/ld.so.conf.d/oidn.conf
+          sudo ldconfig
 
       - name: Pull image
         run: docker pull ${{ env.image }}:${{ matrix.nuke_version }}-linux-slim-latest
@@ -47,10 +51,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Docker
+      - name: Set up Docker and OpenImageDenoise
         run: |
-          brew install docker open-image-denoise
+          brew install docker
+          curl -L -o oidn.tar.gz https://github.com/OpenImageDenoise/oidn/releases/download/v${{ env.OIDN_VERSION }}/oidn-${{ env.OIDN_VERSION }}.x86_64.macos.tar.gz
+          sudo mkdir -p /opt
+          sudo tar -xzf oidn.tar.gz -C /opt/
           colima start --cpu 2 --memory 10 --disk 10
+          echo "OIDN_ROOT=/opt/oidn-${{ env.OIDN_VERSION }}.x86_64.macos" >> $GITHUB_ENV
 
       - name: Pull image
         run: docker pull ${{ env.image }}:${{ matrix.nuke_version }}-macos-latest
@@ -74,10 +82,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Docker
+      - name: Set up Docker and OpenImageDenoise
         run: |
-          brew install docker open-image-denoise
+          brew install docker
+          curl -L -o oidn.tar.gz https://github.com/OpenImageDenoise/oidn/releases/download/v${{ env.OIDN_VERSION }}/oidn-${{ env.OIDN_VERSION }}.x86_64.macos.tar.gz
+          sudo mkdir -p /opt
+          sudo tar -xzf oidn.tar.gz -C /opt/
           colima start --cpu 2 --memory 10 --disk 10
+          echo "OIDN_ROOT=/opt/oidn-${{ env.OIDN_VERSION }}.x86_64.macos" >> $GITHUB_ENV
 
       - name: Pull image
         run: docker pull ${{ env.image }}:${{ matrix.nuke_version }}-macos-arm-latest
