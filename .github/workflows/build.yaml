@@ -11,92 +11,92 @@ env:
   OIDN_VERSION: "2.3.3"
 
 jobs:
-  build-linux:
-    runs-on: ubuntu-latest
+  # build-linux:
+  #   runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        nuke_version: ["14.0", "14.1", "15.0"]
-      fail-fast: true
+  #   strategy:
+  #     matrix:
+  #       nuke_version: ["14.0", "14.1", "15.0"]
+  #     fail-fast: true
 
-    steps:
-      - uses: actions/checkout@v4
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - name: Download and Install OpenImageDenoise
-        run: |
-          wget https://github.com/RenderKit/oidn/releases/download/v${{ env.OIDN_VERSION }}/oidn-${{ env.OIDN_VERSION }}.x86_64.linux.tar.gz
-          tar -xzf oidn-${{ env.OIDN_VERSION }}.x86_64.linux.tar.gz -C ${{ github.workspace }}
+  #     - name: Download and Install OpenImageDenoise
+  #       run: |
+  #         wget https://github.com/RenderKit/oidn/releases/download/v${{ env.OIDN_VERSION }}/oidn-${{ env.OIDN_VERSION }}.x86_64.linux.tar.gz
+  #         tar -xzf oidn-${{ env.OIDN_VERSION }}.x86_64.linux.tar.gz -C ${{ github.workspace }}
 
-      - name: Pull image
-        run: docker pull ${{ env.image }}:${{ matrix.nuke_version }}-linux-slim-latest
+  #     - name: Pull image
+  #       run: docker pull ${{ env.image }}:${{ matrix.nuke_version }}-linux-slim-latest
 
-      - name: Run build
-        run: |
-          docker run --rm -v "${{ github.workspace }}:/nuke_build_directory" ${{ env.image }}:${{ matrix.nuke_version }}-linux-slim-latest bash -c "cmake3 . -DOIDN_ROOT=/nuke_build_directory/oidn-${{ env.OIDN_VERSION }}.x86_64.linux -B build && cmake3 --build build"
+  #     - name: Run build
+  #       run: |
+  #         docker run --rm -v "${{ github.workspace }}:/nuke_build_directory" ${{ env.image }}:${{ matrix.nuke_version }}-linux-slim-latest bash -c "cmake3 . -DOIDN_ROOT=/nuke_build_directory/oidn-${{ env.OIDN_VERSION }}.x86_64.linux -B build && cmake3 --build build"
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: linux-${{ matrix.nuke_version }}
-          path: ${{ github.workspace }}/build/lib
+  #     - uses: actions/upload-artifact@v4
+  #       with:
+  #         name: linux-${{ matrix.nuke_version }}
+  #         path: ${{ github.workspace }}/build/lib
 
-  build-macos:
-    runs-on: macos-latest
+  # build-macos:
+  #   runs-on: macos-latest
 
-    strategy:
-      matrix:
-        nuke_version: ["14.0", "14.1", "15.0"]
-      fail-fast: true
+  #   strategy:
+  #     matrix:
+  #       nuke_version: ["14.0", "14.1", "15.0"]
+  #     fail-fast: true
 
-    steps:
-      - uses: actions/checkout@v4
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - name: Set up Docker and OpenImageDenoise
-        run: |
-          brew install docker
-          curl -L -o oidn.tar.gz https://github.com/RenderKit/oidn/releases/download/v${{ env.OIDN_VERSION }}/oidn-${{ env.OIDN_VERSION }}.x86_64.macos.tar.gz
-          tar -xzf oidn.tar.gz -C ${{ github.workspace }}
-          colima start --cpu 2 --memory 10 --disk 10
+  #     - name: Set up Docker and OpenImageDenoise
+  #       run: |
+  #         brew install docker
+  #         curl -L -o oidn.tar.gz https://github.com/RenderKit/oidn/releases/download/v${{ env.OIDN_VERSION }}/oidn-${{ env.OIDN_VERSION }}.x86_64.macos.tar.gz
+  #         tar -xzf oidn.tar.gz -C ${{ github.workspace }}
+  #         colima start --cpu 2 --memory 10 --disk 10
 
-      - name: Pull image
-        run: docker pull ${{ env.image }}:${{ matrix.nuke_version }}-macos-latest
+  #     - name: Pull image
+  #       run: docker pull ${{ env.image }}:${{ matrix.nuke_version }}-macos-latest
 
-      - name: Run build
-        run: |
-          docker run --rm -v "${{ github.workspace }}:/nuke_build_directory" ${{ env.image }}:${{ matrix.nuke_version }}-macos-latest bash -c "cmake . -DOIDN_ROOT=/nuke_build_directory/oidn-${{ env.OIDN_VERSION }}.x86_64.macos -B build && cmake --build build"
+  #     - name: Run build
+  #       run: |
+  #         docker run --rm -v "${{ github.workspace }}:/nuke_build_directory" ${{ env.image }}:${{ matrix.nuke_version }}-macos-latest bash -c "cmake . -DOIDN_ROOT=/nuke_build_directory/oidn-${{ env.OIDN_VERSION }}.x86_64.macos -B build && cmake --build build"
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: macos-${{ matrix.nuke_version }}
-          path: ${{ github.workspace }}/build/lib
+  #     - uses: actions/upload-artifact@v4
+  #       with:
+  #         name: macos-${{ matrix.nuke_version }}
+  #         path: ${{ github.workspace }}/build/lib
 
-  build-macos-arm:
-    runs-on: macos-latest
-    strategy:
-      matrix:
-        nuke_version: ["15.0"]
-      fail-fast: true
+  # build-macos-arm:
+  #   runs-on: macos-latest
+  #   strategy:
+  #     matrix:
+  #       nuke_version: ["15.0"]
+  #     fail-fast: true
 
-    steps:
-      - uses: actions/checkout@v4
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - name: Set up Docker and OpenImageDenoise
-        run: |
-          brew install docker
-          curl -L -o oidn.tar.gz https://github.com/RenderKit/oidn/releases/download/v${{ env.OIDN_VERSION }}/oidn-${{ env.OIDN_VERSION }}.arm64.macos.tar.gz
-          tar -xzf oidn.tar.gz -C ${{ github.workspace }}
-          colima start --cpu 2 --memory 10 --disk 10
+  #     - name: Set up Docker and OpenImageDenoise
+  #       run: |
+  #         brew install docker
+  #         curl -L -o oidn.tar.gz https://github.com/RenderKit/oidn/releases/download/v${{ env.OIDN_VERSION }}/oidn-${{ env.OIDN_VERSION }}.arm64.macos.tar.gz
+  #         tar -xzf oidn.tar.gz -C ${{ github.workspace }}
+  #         colima start --cpu 2 --memory 10 --disk 10
 
-      - name: Pull image
-        run: docker pull ${{ env.image }}:${{ matrix.nuke_version }}-macos-arm-latest
+  #     - name: Pull image
+  #       run: docker pull ${{ env.image }}:${{ matrix.nuke_version }}-macos-arm-latest
 
-      - name: Run build
-        run: |
-          docker run --rm -v "${{ github.workspace }}:/nuke_build_directory" ${{ env.image }}:${{ matrix.nuke_version }}-macos-arm-latest bash -c "cmake . -DOIDN_ROOT=/nuke_build_directory/oidn-${{ env.OIDN_VERSION }}.arm64.macos -B build && cmake --build build"
+  #     - name: Run build
+  #       run: |
+  #         docker run --rm -v "${{ github.workspace }}:/nuke_build_directory" ${{ env.image }}:${{ matrix.nuke_version }}-macos-arm-latest bash -c "cmake . -DOIDN_ROOT=/nuke_build_directory/oidn-${{ env.OIDN_VERSION }}.arm64.macos -B build && cmake --build build"
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: macos_arm-${{ matrix.nuke_version }}
-          path: ${{ github.workspace }}/build/lib
+  #     - uses: actions/upload-artifact@v4
+  #       with:
+  #         name: macos_arm-${{ matrix.nuke_version }}
+  #         path: ${{ github.workspace }}/build/lib
 
   build-windows:
     runs-on: windows-latest
