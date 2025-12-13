@@ -1,12 +1,14 @@
 name: Build plugins
 on:
+  workflow_dispatch:
   push:
     tags:
       - '*'
+  pull_request:
 
 env:
   image: ghcr.io/gillesvink/nukedockerbuild
-  OIDN_VERSION: "2.1.0"
+  OIDN_VERSION: "2.3.3"
 
 jobs:
   build-linux:
@@ -14,7 +16,7 @@ jobs:
 
     strategy:
       matrix:
-        nuke_version: ["13.0", "13.1", "13.2", "14.0", "14.1", "15.0"]
+        nuke_version: ["14.0", "14.1", "15.0"]
       fail-fast: true
 
     steps:
@@ -22,17 +24,15 @@ jobs:
 
       - name: Download and Install OpenImageDenoise
         run: |
-          wget https://github.com/OpenImageDenoise/oidn/releases/download/v${{ env.OIDN_VERSION }}/oidn-${{ env.OIDN_VERSION }}.x86_64.linux.tar.gz
-          sudo mkdir -p /opt
-          sudo tar -xzf oidn-${{ env.OIDN_VERSION }}.x86_64.linux.tar.gz -C /opt/
-          echo "/opt/oidn-${{ env.OIDN_VERSION }}.x86_64.linux/lib" | sudo tee /etc/ld.so.conf.d/oidn.conf
-          sudo ldconfig
+          wget https://github.com/RenderKit/oidn/releases/download/v${{ env.OIDN_VERSION }}/oidn-${{ env.OIDN_VERSION }}.x86_64.linux.tar.gz
+          tar -xzf oidn-${{ env.OIDN_VERSION }}.x86_64.linux.tar.gz -C ${{ github.workspace }}
 
       - name: Pull image
         run: docker pull ${{ env.image }}:${{ matrix.nuke_version }}-linux-slim-latest
 
       - name: Run build
-        run: docker run --rm -v "${{ github.workspace }}:/nuke_build_directory" ${{ env.image }}:${{ matrix.nuke_version }}-linux-slim-latest bash -c "cmake3 . -B build && cmake3 --build build"
+        run: |
+          docker run --rm -v "${{ github.workspace }}:/nuke_build_directory" ${{ env.image }}:${{ matrix.nuke_version }}-linux-slim-latest bash -c "cmake3 . -DOIDN_ROOT=/nuke_build_directory/oidn-${{ env.OIDN_VERSION }}.x86_64.linux -B build && cmake3 --build build"
 
       - uses: actions/upload-artifact@v4
         with:
@@ -41,11 +41,10 @@ jobs:
 
   build-macos:
     runs-on: macos-latest
-    if: startsWith(github.ref, 'refs/tags/')
 
     strategy:
       matrix:
-        nuke_version: ["13.0", "13.1", "13.2", "14.0", "14.1", "15.0"]
+        nuke_version: ["14.0", "14.1", "15.0"]
       fail-fast: true
 
     steps:
@@ -54,17 +53,16 @@ jobs:
       - name: Set up Docker and OpenImageDenoise
         run: |
           brew install docker
-          curl -L -o oidn.tar.gz https://github.com/OpenImageDenoise/oidn/releases/download/v${{ env.OIDN_VERSION }}/oidn-${{ env.OIDN_VERSION }}.x86_64.macos.tar.gz
-          sudo mkdir -p /opt
-          sudo tar -xzf oidn.tar.gz -C /opt/
+          curl -L -o oidn.tar.gz https://github.com/RenderKit/oidn/releases/download/v${{ env.OIDN_VERSION }}/oidn-${{ env.OIDN_VERSION }}.x86_64.macos.tar.gz
+          tar -xzf oidn.tar.gz -C ${{ github.workspace }}
           colima start --cpu 2 --memory 10 --disk 10
-          echo "OIDN_ROOT=/opt/oidn-${{ env.OIDN_VERSION }}.x86_64.macos" >> $GITHUB_ENV
 
       - name: Pull image
         run: docker pull ${{ env.image }}:${{ matrix.nuke_version }}-macos-latest
 
       - name: Run build
-        run: docker run --rm -v "${{ github.workspace }}:/nuke_build_directory" ${{ env.image }}:${{ matrix.nuke_version }}-macos-latest bash -c "cmake . -B build && cmake --build build"
+        run: |
+          docker run --rm -v "${{ github.workspace }}:/nuke_build_directory" ${{ env.image }}:${{ matrix.nuke_version }}-macos-latest bash -c "cmake . -DOIDN_ROOT=/nuke_build_directory/oidn-${{ env.OIDN_VERSION }}.x86_64.macos -B build && cmake --build build"
 
       - uses: actions/upload-artifact@v4
         with:
@@ -73,7 +71,6 @@ jobs:
 
   build-macos-arm:
     runs-on: macos-latest
-    if: startsWith(github.ref, 'refs/tags/')
     strategy:
       matrix:
         nuke_version: ["15.0"]
@@ -85,17 +82,16 @@ jobs:
       - name: Set up Docker and OpenImageDenoise
         run: |
           brew install docker
-          curl -L -o oidn.tar.gz https://github.com/OpenImageDenoise/oidn/releases/download/v${{ env.OIDN_VERSION }}/oidn-${{ env.OIDN_VERSION }}.x86_64.macos.tar.gz
-          sudo mkdir -p /opt
-          sudo tar -xzf oidn.tar.gz -C /opt/
+          curl -L -o oidn.tar.gz https://github.com/RenderKit/oidn/releases/download/v${{ env.OIDN_VERSION }}/oidn-${{ env.OIDN_VERSION }}.arm64.macos.tar.gz
+          tar -xzf oidn.tar.gz -C ${{ github.workspace }}
           colima start --cpu 2 --memory 10 --disk 10
-          echo "OIDN_ROOT=/opt/oidn-${{ env.OIDN_VERSION }}.x86_64.macos" >> $GITHUB_ENV
 
       - name: Pull image
         run: docker pull ${{ env.image }}:${{ matrix.nuke_version }}-macos-arm-latest
 
       - name: Run build
-        run: docker run --rm -v "${{ github.workspace }}:/nuke_build_directory" ${{ env.image }}:${{ matrix.nuke_version }}-macos-arm-latest bash -c "cmake . -B build && cmake --build build"
+        run: |
+          docker run --rm -v "${{ github.workspace }}:/nuke_build_directory" ${{ env.image }}:${{ matrix.nuke_version }}-macos-arm-latest bash -c "cmake . -DOIDN_ROOT=/nuke_build_directory/oidn-${{ env.OIDN_VERSION }}.arm64.macos -B build && cmake --build build"
 
       - uses: actions/upload-artifact@v4
         with:
@@ -104,11 +100,10 @@ jobs:
 
   build-windows:
     runs-on: windows-latest
-    if: startsWith(github.ref, 'refs/tags/')
 
     strategy:
       matrix:
-        nuke_version: ["13.0", "13.1", "13.2", "14.0", "14.1", "15.0"]
+        nuke_version: ["14.0", "14.1", "15.0"]
       fail-fast: true
 
     steps:
@@ -116,14 +111,23 @@ jobs:
 
       - name: Download OpenImageDenoise
         run: |
-          Invoke-WebRequest -Uri "https://github.com/OpenImageDenoise/oidn/releases/download/v2.1.0/oidn-2.1.0.x64.windows.zip" -OutFile "C:\oidn-2.1.0.x64.windows.zip"
-          Expand-Archive "C:\oidn-2.1.0.x64.windows.zip" -DestinationPath "C:\" -Verbose
+          $ver = "${{ env.OIDN_VERSION }}"
+          $fileName = "oidn-$ver.x64.windows.zip"
+          $url = "https://github.com/RenderKit/oidn/releases/download/v$ver/$fileName"
+          $outPath = "$env:TEMP\$fileName"
+          
+          # Download and Extract
+          Write-Host "Downloading OIDN version $ver from $url"
+          Invoke-WebRequest -Uri $url -OutFile $outPath
+          Expand-Archive $outPath -DestinationPath "${{ github.workspace }}" -Verbose
 
       - name: Pull image
         run: docker pull ${{ env.image }}:${{ matrix.nuke_version }}-windows-latest
 
       - name: Run build
-        run: docker run --rm -v "${{ github.workspace }}:C:\nuke_build_directory" ${{ env.image }}:${{ matrix.nuke_version }}-windows-latest powershell -Command "cmake . -DCMAKE_GENERATOR_PLATFORM=x64 -B build ; cmake --build build --config Release"
+        run: |
+          $oidnDir = "oidn-${{ env.OIDN_VERSION }}.x64.windows"
+          docker run --rm -v "${{ github.workspace }}:C:\nuke_build_directory" ${{ env.image }}:${{ matrix.nuke_version }}-windows-latest powershell -Command "cmake . -DCMAKE_GENERATOR_PLATFORM=x64 -DOIDN_ROOT=C:/nuke_build_directory/$oidnDir -B build ; cmake --build build --config Release"
 
       - uses: actions/upload-artifact@v4
         with:

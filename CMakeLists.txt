@@ -19,6 +19,7 @@ function(add_plugin PLUGIN_NAME)
     add_nuke_plugin(${PLUGIN_NAME} ${ARGN})
     target_compile_definitions(${PLUGIN_NAME} PRIVATE FN_PLUGIN)
     target_link_directories(${PLUGIN_NAME} PUBLIC OpenImageDenoise::OpenImageDenoise)
+    target_link_libraries(${PLUGIN_NAME} PUBLIC OpenImageDenoise::OpenImageDenoise)
 endfunction()
 
 add_plugin(Denoiser src/Denoiser.cpp)

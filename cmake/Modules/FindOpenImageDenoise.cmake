@@ -1,6 +1,6 @@
 if(NOT DEFINED OIDN_ROOT)
   if(WIN32)
-    set(OIDN_ROOT "C:/oidn-2.1.0.x64.windows")
+    set(OIDN_ROOT "C:/nuke_build_directory/oidn-2.3.3.x64.windows")
   elseif(APPLE)
     set(OIDN_ROOT "/opt/homebrew/Cellar/open-image-denoise")
     file(GLOB OIDN_VERSIONED_DIRS "${OIDN_ROOT}/*")
@@ -8,9 +8,12 @@ if(NOT DEFINED OIDN_ROOT)
       list(GET OIDN_VERSIONED_DIRS 0 OIDN_ROOT) # Take the first match
     endif()
   else()
-    set(OIDN_ROOT "/opt/oidn-2.1.0.x86_64.linux")
+    set(OIDN_ROOT "/opt/oidn-2.3.3.x86_64.linux")
   endif()
 endif()
+
+message("Looking at OIDN_ROOT ${OIDN_ROOT}")
+set(CMAKE_FIND_DEBUG_MODE TRUE)
 
 find_path(
   OpenImageDenoise_INCLUDE_DIR
