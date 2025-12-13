@@ -2,7 +2,8 @@
   "build": {
     "dockerfile": "Dockerfile",
     "args": {
-      "NUKE_VERSION": "15.0"  // Nuke MacOS ARM only exists for 15+
+      "NUKE_VERSION": "15.0",  // Nuke MacOS ARM only exists for 15+
+      "OIDN_VERSION": "2.3.3"
     }
   },
   "customizations": {

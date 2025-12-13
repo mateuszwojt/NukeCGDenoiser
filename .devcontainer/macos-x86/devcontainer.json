@@ -2,7 +2,8 @@
   "build": {
     "dockerfile": "Dockerfile",
     "args": {
-      "NUKE_VERSION": "15.0"
+      "NUKE_VERSION": "15.1",
+      "OIDN_VERSION": "2.3.3"
     }
   },
   "customizations": {
