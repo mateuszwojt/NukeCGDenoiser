@@ -22,4 +22,4 @@ function(add_plugin PLUGIN_NAME)
     target_link_libraries(${PLUGIN_NAME} PUBLIC OpenImageDenoise::OpenImageDenoise)
 endfunction()
 
-add_plugin(Denoiser src/Denoiser.cpp)
+add_plugin(Denoiser src/denoiser.cpp)
