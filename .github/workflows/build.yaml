@@ -134,12 +134,12 @@ jobs:
       - name: Run build
         run: |
           OIDN_DIR="oidn-${{ env.OIDN_VERSION }}.x64.windows"
-          docker run --rm -v "${{ github.workspace }}:/nuke_build_directory" ${{ env.image }}:${{ matrix.nuke_version }}-windows bash -c "cmake . -G Ninja -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_TOOLCHAIN_FILE=/nukedockerbuild/toolchain.cmake -DOIDN_ROOT=/nuke_build_directory/$OIDN_DIR -B build && cmake --build build --config Release"
+          docker run --rm -v "${{ github.workspace }}:/nuke_build_directory" ${{ env.image }}:${{ matrix.nuke_version }}-windows bash -c "cmake . -G Ninja -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=/nukedockerbuild/toolchain.cmake -DOIDN_ROOT=/nuke_build_directory/$OIDN_DIR -B build && cmake --build build --config Release"
 
       - uses: actions/upload-artifact@v4
         with:
           name: windows-${{ matrix.nuke_version }}
-          path: ${{ github.workspace }}/build/lib/Release
+          path: ${{ github.workspace }}/build/lib
 
   create-release:
     runs-on: ubuntu-latest
