@@ -106,7 +106,7 @@ jobs:
   #         path: ${{ github.workspace }}/build/lib
 
   build-windows:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     strategy:
       matrix:
@@ -118,15 +118,8 @@ jobs:
 
       - name: Download OpenImageDenoise
         run: |
-          $ver = "${{ env.OIDN_VERSION }}"
-          $fileName = "oidn-$ver.x64.windows.zip"
-          $url = "https://github.com/RenderKit/oidn/releases/download/v$ver/$fileName"
-          $outPath = "$env:TEMP\$fileName"
-          
-          # Download and Extract
-          Write-Host "Downloading OIDN version $ver from $url"
-          Invoke-WebRequest -Uri $url -OutFile $outPath
-          Expand-Archive $outPath -DestinationPath "${{ github.workspace }}" -Verbose
+          wget https://github.com/RenderKit/oidn/releases/download/v${{ env.OIDN_VERSION }}/oidn-${{ env.OIDN_VERSION }}.x64.windows.zip
+          unzip oidn-${{ env.OIDN_VERSION }}.x64.windows.zip
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
@@ -140,8 +133,8 @@ jobs:
 
       - name: Run build
         run: |
-          $oidnDir = "oidn-${{ env.OIDN_VERSION }}.x64.windows"
-          docker run --rm -v "${{ github.workspace }}:C:\nuke_build_directory" ${{ env.image }}:${{ matrix.nuke_version }}-windows powershell -Command "cmake . -DCMAKE_GENERATOR_PLATFORM=x64 -DOIDN_ROOT=C:/nuke_build_directory/$oidnDir -B build ; cmake --build build --config Release"
+          OIDN_DIR="oidn-${{ env.OIDN_VERSION }}.x64.windows"
+          docker run --rm -v "${{ github.workspace }}:/nuke_build_directory" ${{ env.image }}:${{ matrix.nuke_version }}-windows bash -c "cmake . -DOIDN_ROOT=/nuke_build_directory/$OIDN_DIR -B build && cmake --build build --config Release"
 
       - uses: actions/upload-artifact@v4
         with:
