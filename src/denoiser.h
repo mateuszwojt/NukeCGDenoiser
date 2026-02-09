@@ -1,4 +1,4 @@
-// Copyright (c) 2021-2024 Mateusz Wojt
+// Copyright (c) 2021-2026 Mateusz Wojt
 
 #include <DDImage/PlanarIop.h>
 #include <DDImage/Interest.h>

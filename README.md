@@ -11,7 +11,7 @@ This is a Nuke plugin for denoising CG renders using Intel's OpenImageDenoise li
 In order to compile this plugin, you're gonna need:
 
 - CMake 3.13 or later
-- Nuke 12.x/13.x/14.x/15.x
+- Nuke 12.x/13.x/14.x/15.x/16.x
 - [Intel's OpenImageDenoise 2.x](https://github.com/RenderKit/oidn)
 
 This plugin should compile fine on Windows, Linux and MacOS. It was tested with Nuke 15.0v2 / MacOS Ventura 13.6.1 (arm64) with Open Image Denoise v2.1.0.
